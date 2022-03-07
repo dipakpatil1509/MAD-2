@@ -35,7 +35,7 @@
                         </li>
                         <li class="nav-item">
                             <router-link class="nav-link" :to="{ name: 'Profile' }">
-                                {{ user.name ? user.name : user.email || "Profile"}}
+                                {{ user ? (user.username ? user.username : user.email) : "Profile"}}
                             </router-link>
                         </li>
                     </ul>
@@ -46,12 +46,15 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 export default {
     name:"Navbar",
     data(){
         return{
-            user:{}
         }
+    },
+    computed:{
+        ...mapGetters(["user"])
     },
     mounted(){}
 };

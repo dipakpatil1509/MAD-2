@@ -48,10 +48,9 @@ review_responses_fields = {
 
 user_output_fields = {
     "id": fields.Integer,
-    "name": fields.String,
+    "username": fields.String,
     "email": fields.String,
-    "fs_uniquifier": fields.String,
-    "role": fields.String([x.name for x in User.Role]),
+    "role": fields.String(attribute=lambda obj: str(User.Role(obj.role).name)),
     "created_at":fields.DateTime,
     "decks":fields.List(fields.Nested(deck_output_fields)),
     "reviewResponses":fields.List(fields.Nested(deck_output_fields)),

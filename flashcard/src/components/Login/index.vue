@@ -9,14 +9,6 @@
                         </router-link>
                         <h1>{{ isRegister ? "Register" : "Login"}} To FlashCard</h1>
                         <form class="needs-validation" novalidate @submit.prevent="loginSubmit">
-                            <div v-if="isRegister" class="mb-3 has-validation">
-                                <label for="name" class="form-label">Enter your name</label>
-                                <input type="text" class="form-control" id="name" v-model="name" 
-                                    name="name" placeholder="ABC XYZ" required>
-                                <div class="invalid-feedback">
-                                    Please enter valid name
-                                </div>
-                            </div>
                             <div class="mb-3 has-validation">
                                 <label for="exampleInputEmail1" class="form-label">Email address</label>
                                 <input type="email" class="form-control" id="exampleInputEmail1" v-model="email"
@@ -41,10 +33,10 @@
                             </div>
                             <button type="submit" class="btn">Submit</button>
                         </form>
-                        <router-link v-if="!isRegister" :to="{name:'Register', query:$route.query}">
+                        <router-link v-if="isRegister" :to="{name:'Login', query:$route.query}">
                             Already a user? Login here
                         </router-link>
-                        <router-link v-else :to="{name:'Login', query:$route.query}">
+                        <router-link v-else :to="{name:'Register', query:$route.query}">
                             Not a user? Sign up for free
                         </router-link>
                         <div class="contactUs">
@@ -86,7 +78,6 @@ export default {
         return{
             email:"",
             password:"",
-            name:"",
             remember:true,
             isRegister:false,
             loading:false
@@ -116,7 +107,6 @@ export default {
                 email:this.email,
                 password:this.password,
                 "remember":this.remember,
-                name:this.name,
             }
             let endpoint = "login?include_auth_token"
             if (this.isRegister){
@@ -124,6 +114,7 @@ export default {
             }
 
             this.loading = true;
+            console.log(data);
             axios.post(REMOTE_URL + endpoint, data).then(res=>{
                 if(res.data.response && res.data.response.user){
                     let auth_token = res.data.response.user.authentication_token;

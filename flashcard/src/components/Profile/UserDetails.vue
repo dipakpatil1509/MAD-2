@@ -1,15 +1,15 @@
 <template>
     <h1 class="headline">Account Setting</h1>
-    <div class="profileRow mb-5">
+    <div v-if="user" class="profileRow mb-5">
         <div class="image" align="center">
-            <img :src="user.image" :alt="user.name" />
+            <img :src="user.image" :alt="user.username" />
         </div>
         <div class="details">
-            <h2>{{ user.name ? user.name : "Update Name" }}</h2>
+            <h2>{{ user.username ? user.username : "Flashcard User" }}</h2>
             <a :href="'mailto:' + user.email" class="uniq_username">{{
                 user.email
             }}</a>
-            <p>{{ user.role.name }}</p>
+            <p>{{ user.role }}</p>
 
             <button
                 data-bs-toggle="modal"
@@ -18,7 +18,7 @@
             >
                 Update Profile
             </button>
-            <button class="btn logout" href="#!" :disabled="loading" @click.prevent="logout">
+            <button class="btn logout mx-2" href="#!" :disabled="loading" @click.prevent="logout">
                 <span v-if="loading" class="spinner-border spinner-border-sm" 
                 role="status" aria-hidden="true"></span>
                 <span v-else>Logout</span>
@@ -28,7 +28,6 @@
         <div class="badge text-center">
             <div>
                 <h1>
-                    <!-- {{ user.review_response() }}% -->
                     {{ user.review_response }}
                 </h1>
                 <p class="text-center">Average Score</p>
@@ -176,6 +175,7 @@ a:not(.btn){
     border: var(--black) 1px solid;
     background:var(--white);
     color:#222;
+    min-width: 150px;
 }
 
 </style>

@@ -26,7 +26,7 @@ class User(Base, UserMixin):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    name = db.Column(db.String(100))
+    username = db.Column(db.String(100), nullable=True)
     fs_uniquifier = db.Column(db.String(255), nullable=True)
     role = db.Column(db.Enum(Role), server_default="STUDENT")
     active = db.Column(db.Boolean())

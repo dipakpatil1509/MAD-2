@@ -25,7 +25,7 @@
         <router-view />
     </main>
     <Footer v-if="!hideNavFooter.includes($route.name)" />
-	<div v-if="loader" class="loader_div_fixed">
+	<div v-if="loader" class="loader_div_fixed mid">
 		<div class="spinner-border" role="status">
 			<span class="visually-hidden">Loading...</span>
 		</div>

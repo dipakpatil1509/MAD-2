@@ -24,9 +24,6 @@
                     @submit.prevent="submitForm"
                 >
                     <div class="modal-body">
-                        <div class="text-danger">
-                            {{ errors }}
-                        </div>
                         <div class="mb-3">
                             <label for="name" class="form-label">Name</label>
                             <input
@@ -35,21 +32,21 @@
                                 id="name"
                                 name="name"
                                 placeholder="Enter Name"
-                                v-model="user.name"
+                                v-model="currentUser.username"
                             />
                         </div>
-                        <div class="mb-3 d-flex justify-content-evenly">
+                        <div class="mb-3 d-flex">
                             <div>
                                 <input class="form-check-input" type="radio"
-                                name="role" value="STUDENT" v-model="user.role"
+                                name="role" value="STUDENT" v-model="currentUser.role"
                                 id="student">
                                 <label class="form-check-label" for="student">
                                     Student
                                 </label>
                             </div>
-                            <div>
+                            <div class="mx-2">
                                 <input class="form-check-input" type="radio"
-                                name="role" value="TEACHER" v-model="user.role"
+                                name="role" value="TEACHER" v-model="currentUser.role"
                                 id="teacher">
                                 <label class="form-check-label" for="teacher">
                                     Teacher
@@ -69,7 +66,7 @@
                                 readonly
                                 disabled
                                 placeholder="abcd@abcd.com"
-                                v-model="user.email"
+                                v-model="currentUser.email"
                                 required
                             />
                         </div>
@@ -85,6 +82,7 @@
                                 minlength="8"
                                 maxlength="20"
                                 placeholder="**********"
+                                v-model="oldPassword"
                             />
                             <div class="invalid-feedback">
                                 Please enter valid password Must be 8-20
@@ -103,6 +101,7 @@
                                 minlength="8"
                                 maxlength="20"
                                 placeholder="**********"
+                                v-model="newPassword"
                             />
                             <div class="invalid-feedback">
                                 Please enter valid password Must be 8-20
@@ -121,6 +120,7 @@
                                 minlength="8"
                                 maxlength="20"
                                 placeholder="**********"
+                                v-model="confirmNewPassword"
                             />
                             <div class="invalid-feedback">
                                 Please enter valid password Must be 8-20
@@ -147,40 +147,51 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from 'vuex';
+import { Modal } from 'bootstrap';
+import axios from 'axios';
+import { REMOTE_URL } from "@/constants/constant"
 export default {
     name:"UpdateDetailsModal",
     data(){
         return{
-            errors:"",
-            user:{}
+            oldPassword:null,
+            newPassword:null,
+            confirmNewPassword:null
+        }
+    },
+    computed:{
+        ...mapGetters([
+            "user"
+        ]),
+        currentUser(){
+            let user = this.user;
+            return {...user};
         }
     },
     methods:{
+        ...mapActions(["set_loader", "set_user", "set_toast_message"]),
         submitForm(e){
             var empty = "Must Not Be Empty";
             var notMatch = "Password Not Matching"
             let forms = e.target;
-            forms.classList.add('was-validated')
-            if (!forms.checkValidity()) {
-                return
-            }
 
-            let currentPassword = forms['currentPassword'].value
+            let currentPassword = this.oldPassword
+            let newPassword = this.newPassword
+            let confirmNewPassword = this.confirmNewPassword
 
+            console.log(newPassword  && confirmNewPassword && newPassword === confirmNewPassword);
             if (currentPassword) {
-                let newPassword = forms['newPassword'].value
-                let confirmNewPassword = forms['confirmNewPassword'].value
-                if (!(newPassword !== '' && confirmNewPassword !== '' && newPassword === confirmNewPassword)) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    if (newPassword === "" || confirmNewPassword === "") {
+                if (!(newPassword  && confirmNewPassword && newPassword === confirmNewPassword)) {
 
-                        if (newPassword === "") {
+                    if (!newPassword || !confirmNewPassword) {
+
+                        if (!newPassword) {
                             forms['newPassword'].classList.add('is-invalid')
                             forms['newPassword'].setCustomValidity('Empty Not Valid')
                             forms['newPassword'].parentElement.querySelector('.invalid-feedback').innerHTML = empty
                         }
-                        if (confirmNewPassword === "") {
+                        if (!confirmNewPassword) {
                             forms['confirmNewPassword'].parentElement.querySelector('.invalid-feedback').innerHTML = empty
                             forms['confirmNewPassword'].classList.add('is-invalid')
                             forms['confirmNewPassword'].setCustomValidity('Empty Not Valid')
@@ -192,19 +203,54 @@ export default {
                         forms['confirmNewPassword'].setCustomValidity('Password not match')
                         forms['confirmNewPassword'].parentElement.querySelector('.invalid-feedback').innerHTML = notMatch
                     }
+
+                    return;
                 } else {
                     forms['newPassword'].classList.add('is-valid')
                     forms['newPassword'].setCustomValidity('')
                     forms['confirmNewPassword'].classList.add('is-valid')
                     forms['confirmNewPassword'].setCustomValidity('')
+                    forms['newPassword'].parentElement.querySelector('.invalid-feedback').innerHTML = ""
+                    forms['confirmNewPassword'].parentElement.querySelector('.invalid-feedback').innerHTML = ""
                 }
             }
-            // action="{{ url_for('profile.profileUpdate') }}"
-            // method="POST"
+
+            forms.classList.add('was-validated')
+            if (!forms.checkValidity()) {
+                return
+            }
+            let data = {
+                name: this.currentUser.username,
+                role: this.currentUser.role,
+                currentPassword,
+                newPassword,
+                confirmNewPassword,
+            }
+            this.set_loader(true)
+            console.log(data);
+            axios.put(REMOTE_URL + "user", data, {
+                headers:{
+                    "Auth-Token":localStorage.getItem('auth_token'),
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                console.log(res);
+                if(res.data.error_code){
+                    throw Error(res.data.error_message)
+                }
+                this.set_user(true);
+                var modal = Modal.getInstance(document.querySelector('#updateProfile'))
+                modal.hide();
+                this.set_loader(false);
+            }).catch(err=>{
+                this.set_toast_message(err)
+                this.set_loader(false)
+            })
         }
     },
-    mounted(){
-
+    beforeUnmount(){
+        var modal = Modal.getInstance(document.querySelector('#updateProfile'))
+        modal.hide();
     }
 };
 </script>

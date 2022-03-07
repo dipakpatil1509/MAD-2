@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import FinalDeck from './FinalDeck.vue'
 import SolvedDecks from './SolvedDecks.vue'
 import UpdateProfile from './UpdateProfile.vue'
@@ -37,6 +37,14 @@ export default {
             "user"
         ])
     },
+    methods:{
+        ...mapActions([
+            "set_user"
+        ])
+    },
+    created(){
+        this.set_user(true)
+    }
 }
 </script>
 

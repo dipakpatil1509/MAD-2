@@ -1,5 +1,4 @@
 from flask_login import current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 from application.error import APIException
 from application.models.response_mode import ReviewCard
 from application.models.response_mode import ReviewResponse
@@ -7,125 +6,90 @@ from application.models.user_mode import User
 from application.models.deck import Deck, Card
 from sqlalchemy.sql import func
 from flask_restful import marshal, marshal_with, reqparse, Resource, fields
-from application.constants import user_output_fields
-from flask_security import auth_required
-from flask import request
+from application.constants import user_output_fields, review_responses_fields, review_card_fields
+from flask_security import auth_required, hash_password, verify_password
+from application.database import db
+from sqlalchemy.sql import func
+
 
 custom_user_req = reqparse.RequestParser()
-custom_user_req.add_argument("id")
-custom_user_req.add_argument("email")
+
 custom_user_req.add_argument("name")
-custom_user_req.add_argument("password")
+custom_user_req.add_argument("currentPassword")
+custom_user_req.add_argument("newPassword")
+custom_user_req.add_argument("confirmNewPassword")
 custom_user_req.add_argument("role")
-custom_user_req.add_argument("email")
+custom_user_req.add_argument("isAll")
 
 
 class UserAPI(Resource):
 
     @auth_required("token")
     def get(self):
-        return marshal(current_user, user_output_fields)
+        args = custom_user_req.parse_args()
+        isAll = args.get("isAll", False)
+        resp = marshal(current_user, user_output_fields)
+        if isAll:
+            all = current_user.reviewResponses.order_by(ReviewResponse.completed_at).all()
+            final = None
+            final_cards= []
+            remain = []
 
-    # @auth_required("token")
-    # @marshal_with(user_output_fields)
-    # def get(self):
-    #     user = User.query.get(6)
-    #     if user:
+            if all:
+                final = all[-1]
+                final_cards = final.cards.with_entities(ReviewCard.difficulty, func.count(ReviewCard.difficulty)).group_by(ReviewCard.difficulty).all()
+                final.deck = db.session.query(Deck).filter(Deck.id==final.deck_id).first()
+
+                all.reverse()
+
+                if len(all) > 1:
+                    remain = all[1:]
                     
-    #         # profile = request.args.get('profile', None)
-    #         # user = User.query.get(int(user_id))
+                    for i,item in enumerate(remain):
+                        remain[i].deck = db.session.query(Deck).filter(Deck.id == item.deck_id).first()
+                
+                resp['final'] = marshal(final, review_responses_fields) 
+                resp['final_cards'] = marshal(final_cards, review_card_fields) 
+                resp['solved_decks']= marshal(remain, review_responses_fields) 
 
-    #         # if profile:
-    #         #     all = current_user.reviewResponses.order_by(ReviewResponse.completed_at).all()
-    #         #     final = None
-    #         #     final_cards= []
-    #         #     remain = []
+        return resp, 200
 
-    #         #     if all:
-    #         #         final = all[-1]
-    #         #         final_cards = final.cards.with_entities(ReviewCard.difficulty, func.count(ReviewCard.difficulty)).group_by(ReviewCard.difficulty).all()
-    #         #         final.deck = db.session.query(Deck).filter(Deck.id==final.deck_id).first()
 
-    #         #         all.reverse()
-
-    #         #         if len(all) > 1:
-    #         #             remain = all[1:]
-                        
-    #         #             for i,item in enumerate(remain):
-    #         #                 remain[i].deck = db.session.query(Deck).filter(Deck.id == item.deck_id).first()
+    @auth_required("token")
+    def put(self):
         
-    #         return user, 200
-    #     else:
-    #         raise APIException("404", "Deck not found")
+        try:
+            user = current_user
 
-    # @marshal_with(user_output_fields)
-    # def post(self):
-    #     args = custom_user_req.parse_args()
-    #     name = args.get("name", None)
-    #     email = args.get("email", None)
+            args = custom_user_req.parse_args()
+            user.username = args.get("name", user.username)
 
-    #     if name is None:
-    #         raise BusinessValidationError(status_code=400, msg="name is required")
+            user.role = args.get('role', user.role)
+            
+            currentPassword = args.get('currentPassword', None)
+            if currentPassword:
+                print(currentPassword)
+                if verify_password(currentPassword, user.password):
+                    newPassword = args.get('newPassword', None)
+                    confirmNewPassword = args.get('confirmNewPassword', None)
 
-    #     if email is None:
-    #         raise BusinessValidationError(status_code=400, msg="email is required")
+                    
+                    if newPassword and confirmNewPassword and len(newPassword) > 7 and len(newPassword) < 16:
+                        if newPassword != confirmNewPassword:
+                            raise Exception('Passwords not matching')
+                        
+                        user.password = hash_password(newPassword)
+                    else:
+                        raise Exception("Password must be at least 8 and at max 15 letters long")
+                else:
+                    raise Exception('Current password is wrong')
 
-    #     if "@" not in email:
-    #         raise BusinessValidationError(status_code=400, msg="email is invalid")
-
-    #     user = db.session.query(User).filter((User.name == name) | (User.email == email)).first()
-
-    #     if user:
-    #         raise BusinessValidationError(status_code=400, msg="User is duplicated")
-
-    #     new_user = User(name=name, email=email)
-
-    #     db.session.add(new_user)
-    #     db.session.commit()
-
-    #     return new_user
-
-    # def delete(self, username):
-
-    #     user = db.session.query(User).filter((User.name == username)).first()
-
-    #     if user is None:
-    #         raise BusinessValidationError(status_code=400, msg="User is not there")
-
-    #     try:
-    #         articles = db.session.query(Article).filter(Article.authors.any(name=username)).all()
-
-    #         if articles and len(articles) > 0:
-    #             raise BusinessValidationError(status_code=400, msg="User is arthor, can't delete him")
-    #     #
-    #     except:
-    #         pass
-
-    #     db.session.delete(user)
-    #     db.session.commit()
-
-    #     return "You deleted it " + username, 200
-
-    # def put(self, username):
-    #     args = custom_user_req.parse_args()
-    #     email = args.get("email", None)
-
-    #     if email is None:
-    #         raise BusinessValidationError(status_code=400, msg="email is required")
-
-    #     if "@" not in email:
-    #         raise BusinessValidationError(status_code=400, msg="email is invalid")
-
-    #     user = db.session.query(User).filter((User.name == username)).first()
-
-    #     if user is None:
-    #         raise Error_404(status_code=404)
-
-    #     user.email = email
-
-    #     db.session.add(user)
-    #     db.session.commit()
-
-    #     return "you updated it " + username, 200
+            db.session.add(user)
+            db.session.commit()
+            return marshal(user, user_output_fields)
+        except Exception as e:
+            db.session.rollback()
+            return APIException(400, str(e)).error
+        
 
 
