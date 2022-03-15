@@ -16,8 +16,8 @@
                 <router-link
                     v-if="final.deck"
                     :to="{
-                        name: 'ViewDeck',
-                        params: { deck_id: final.deck.id },
+                        name: 'Result',
+                        params: { response_id: final.id },
                     }"
                     class="fs-5"
                 >
@@ -28,29 +28,28 @@
             <div class="ms-auto me-0">
                 <div class="avg_time mt-4">
                     <h3 class="fs-6">
-                        Averge time :- {{ final.avg_time }} sec
+                        Averge time :- {{ get_time(final.avg_time) }} sec
                     </h3>
                 </div>
                 <div class="completed_at">
                     <h3 class="fs-6">
-                        Completed At :- {{ final.completed_at }}
+                        Completed At :- {{ new Date(final.completed_at).toLocaleString('en-In') }}
                     </h3>
-                    <!-- .strftime(" %H:%M:%S, %d/%m/%Y") -->
                 </div>
             </div>
         </div>
 
         <div
-            v-if="final_decks && final_decks.length > 0"
+            v-if="final.cards && final.cards.length > 0"
             class="question_type"
         >
             <ul>
                 <li
-                    v-for="(item, index) in final_cards"
-                    :key="index"
-                    :class="item.difficulty.name"
+                    v-for="(value, key) in diff_count"
+                    :key="key"
+                    :class="key"
                 >
-                    {{ item.difficulty.name }} - {{ item[1] }}
+                    {{ key }} - {{ value }}
                 </li>
             </ul>
         </div>
@@ -60,7 +59,40 @@
 <script>
 export default {
     name: "FinalDeck",
-    props: ["final", "final_decks"],
+    props: ["final"],
+    data(){
+        return {
+            diff_count:{}
+        }
+    },
+    methods:{
+        get_count(diff){
+            if(!this.diff_count[diff])
+                this.diff_count[diff] = 0
+            this.diff_count[diff] += 1
+        },
+        get_time(time){
+            if(time > 0){
+                var minutes = Math.floor(time / 60000);
+                var seconds = ((time % 60000) / 1000).toFixed(0);
+                return (minutes < 10 ? '0' : '') + minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            }
+            return "00:00"
+        }
+    },
+    watch:{
+        final:{
+            handler(val){
+                console.log(val);
+                if(val && val.cards.length > 0){
+                    val.cards.forEach(item=>{
+                        this.get_count(item.difficulty)
+                    })
+                }
+            },
+            immediate:true
+        }
+    },
 };
 </script>
 

@@ -4,13 +4,13 @@
         <div class="container profileDetails">
             <UserDetails />
             <hr>
-            <div v-if="user.final">
-                <final-deck :final="user.final" :final_decks="user.final_decks" />
+            <div v-if="user.response">
+                <final-deck :final="user.response[0]" />
                 <hr>
             </div>
 
-            <div v-if="user.decks && user.decks.length > 0">
-                <SolvedDecks :decks="user.decks" />
+            <div v-if="user.response && user.response.length > 0">
+                <SolvedDecks :decks="user.response.slice(1)" />
             </div>
             
             <UpdateProfile />

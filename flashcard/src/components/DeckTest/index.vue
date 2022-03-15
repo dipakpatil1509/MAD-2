@@ -1,172 +1,261 @@
 <template>
-    <div id="review">
-    <div class="container-sm w-75 bg-light p-2 pb-5 mt-5">
-
-        <div v-if="isFinish">
-            <h1 class="text-center fs-4 mt-5">Congratulations! You have completed the deck!</h1>
-            <div class="progress mt-5 w-75 mx-auto bg-danger" style="height:25px;">
-                <div class="progress-bar bg-success" :style="'width:'+final.score" id="progressBar" role="progressbar">
-                    {{final.score}}%
+    <div v-if="current_deck" id="review">
+        <div class="container-sm w-75 bg-light p-2 pb-5 mt-5">
+            <div v-if="card">
+                <h6 class="time fs-5 text-center d-block ms-auto"></h6>
+                <div class="question_card" :class="response.answer ? (response.isQuestionCorrect ? 'bg-success' : 'bg-danger') : ''">
+                    <h1 class="text-center">
+                        <span v-if="response.answer">{{response.answer}}</span>
+                        <span v-else>{{card.front}}</span>
+                    </h1>
+                    <span class="timer">{{ timer }} secs</span>
                 </div>
-            </div>
-            <div class="mx-auto d-block w-75">
-                <div class="avg_time mt-4">
-                    <h3 class="fs-5">Averge time :- {{ final.avg_time }} sec</h3>
-                </div>
-                <div class="completed_at">
-                    <h3 class="fs-5">Completed At :- {{ final.completed_at }}</h3>
-                </div>
-                <div class="question_type">
-                    <ul>
-                        <li v-for="item,index in final_cards" :key="index" 
-                            :class="item.difficulty.name">
-                            {{ item.difficulty.name }} - {{ item[1] }}
-                        </li>
-                    </ul>
-                </div>
-                <router-link :to="{name:'Home'}" class="btn btn-primary mx-auto mt-5 d-block w-50">
-                    Go Home
-                </router-link>
-            </div>
-        </div>
-        <div v-else>
-            <h6 class="time fs-5 text-center d-block ms-auto"></h6>
-            <div class="question_card">
-                <h1 class="text-center">
-                    {{card.front}}
-                    <span id="answer"></span>
-                </h1>
-            </div>
-            <ul class="list-group">
-                <li v-for="option,index in card_options" :key="index" class="list-group-item">
-                    <input class="form-check-input" type="radio" name="_{{card.id}}" value="{{-option-}}"
-                        id="{{option}}_{{loop.index}}">
-                    <label class="form-check-label" for="{{option}}_{{loop.index}}">
-                        {{option}}
-                    </label>
-                </li>
-            </ul>
-            <button onclick="return submitAnswer()" class="btn btn-primary w-25 mx-auto mt-3 d-block">
-                <span id="submit_text">
-                    Show answer
-                </span>
-                <div class="spinner-border d-none spinner-border-sm" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </button>
-
-            <form action="{{ url_for('review.review_form_post', deck_id=deck.id) }}" class="d-none" name="afterSubmit" method="POST">
-                <input type="text" name="next" id="next" value="{{card.next}}" hidden>
-                <input type="text" name="response_id" id="response_id" hidden>
-                <div class="sort_options">
-                    <h5 class="d-block w-100 text-center">
-                        Difficulty Level
-                    </h5>
-                    <div class="sorts mx-auto w-100">
-                        <div class="option">
-                            <input type="radio" name="difficulty" id="easy" value="1" hidden />
-                            <label for="easy" class="shadow">
-                                <span>Easy</span>
-                            </label>
-                        </div>
-                        <div class="option">
-                            <input type="radio" name="difficulty" id="modarate" value="2" checked hidden />
-                            <label for="modarate" class="shadow">
-                                <span>Moderate</span>
-                            </label>
-                        </div>
-                        <div class="option">
-                            <input type="radio" name="difficulty" id="hard" value="3" hidden />
-                            <label for="hard" class="shadow">
-                                <span>Hard</span>
-                            </label>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            Next 
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                <ul class="list-group">
+                    <li v-for="option,index in card_options" :key="index" class="list-group-item">
+                        <input class="form-check-input" type="radio" :name="'_'+card.id" v-model="selected_option"
+                            :value="option.trim()" :id="option + '_' + index" :disabled="response.answer">
+                        <label class="form-check-label" :for="option + '_' + index">
+                            {{option}}
+                        </label>
+                    </li>
+                </ul>
+                <button v-if="!response.answer" @click="submitAnswer" :disabled="submitLoader"
+                    class="btn btn-primary w-25 mx-auto mt-3 d-block">
+                    <div v-if="submitLoader" class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                </div>
-            </form>
+                    <span v-else id="submit_text">
+                        Show answer
+                    </span>
+                </button>
+                <form v-if="response.isQuestionDone" @submit.prevent="nextQuestion">
+                    <input type="text" name="next" id="next" value="{{card.next}}" hidden>
+                    <input type="text" name="response_id" id="response_id" hidden>
+                    <div class="sort_options">
+                        <h5 class="d-block w-100 text-center">
+                            Difficulty Level
+                        </h5>
+                        <div class="sorts mx-auto w-100">
+                            <div class="option">
+                                <input type="radio" name="difficulty" id="easy" value="1" v-model="difficulty" hidden />
+                                <label for="easy" class="shadow">
+                                    <span>Easy</span>
+                                </label>
+                            </div>
+                            <div class="option">
+                                <input type="radio" name="difficulty" id="modarate" value="2" v-model="difficulty" checked hidden />
+                                <label for="modarate" class="shadow">
+                                    <span>Moderate</span>
+                                </label>
+                            </div>
+                            <div class="option">
+                                <input type="radio" name="difficulty" id="hard" value="3" v-model="difficulty" hidden />
+                                <label for="hard" class="shadow">
+                                    <span>Hard</span>
+                                </label>
+                            </div>
+                            <button type="submit" :disabled="submitLoader"
+                                class="btn btn-primary w-25 mx-auto mt-3 d-block">
+                                <div v-if="submitLoader" class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span v-else id="submit_text">
+                                    Next 
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 </template>
 
 <script>
+import axios from 'axios';
+import { mapActions, mapGetters } from 'vuex';
+import {REMOTE_URL, get_token} from '@/constants/constant.js';
+var lodash = require('lodash')
 export default {
     name: "DeckTest",
     data() {
         return {
             isFinish:false,
-            card:{},
-            final_cards:[],
-            deck:[]
+            card:null,
+            submitLoader:false,
+            current_question:0,
+            selected_option:null,
+            difficulty:null,
+            response:{
+                isQuestionDone:false,
+                isQuestionCorrect:false,
+                answer:null,
+                response_id:null,
+            },
+            time:0,
+            current_time:0,
+            interval:null,
+            final_response:null,
+            previous_card:null,
         };
     },
     computed: {
+        ...mapGetters(["current_deck", "user", "loader"]),
         card_options(){
-            return this.card.options && this.card.options.filter(a => a !== undefined || a !== null)
+            let options = []
+            if(this.card.options){
+                options = this.card.options.split(',').filter(a => a !== undefined || a !== null)
+                options = lodash.shuffle(options)
+            }
+            return options
+        },
+        timer(){
+            let millis = this.current_time - this.time;
+            if(millis > 0){
+                var minutes = Math.floor(millis / 60000);
+                var seconds = ((millis % 60000) / 1000).toFixed(0);
+                return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            }
+            return "00:00";
         }
     },
     methods: {
-        submitAnswer(e) {
+        ...mapActions([
+            "set_current_deck", "set_loader", "set_loader_message", 
+            "set_toast_message", "set_error_message", "set_user"
+        ]),
+        submitAnswer() {
+            console.log(this.selected_option);
 
-            let forms = e.target;
-            
-            if(forms){
-                forms.classList.add('was-validated')
-                if (!forms.checkValidity()) {
-                    return false;
-                }
+            if(!this.selected_option){
+                return false
             }
-            // var input = $(':radio[name=_{{card.id}}]').filter(':checked').val();
 
-            // if(!input){
-            //     return false
-            // }
-
-            // clearInterval(interval)
+            this.submitLoader=true;
+            if(this.interval)
+                clearInterval(this.interval)
             
-            // document.querySelector('#submit_text').classList.add('d-none')
-            // document.querySelector('.spinner-border ').classList.remove('d-none')
-            // var question_card = document.querySelector('.question_card')
+            let data = {
+                card_id:this.card.id,
+                time:new Date() - this.time,
+                answer:this.selected_option
+            }
 
-            // $.ajax({
-            //     method: "GET",
-            //     url: '{{ url_for("review.check_answer") }}?card_id={{card.id}}&&time='+ prev + '&&answer='+input,
-            //     dataType: 'json',
-            //     async: false,
-            //     success: function(data){
-            //         console.log("success");
-            //         if(data.redirect){
-            //             return window.location.href = "/start_test/{{deck.id}}"
-            //         }
-            //         if(data.correct){
-            //             question_card.classList.add('bg-success')
-            //         }else{
-            //             question_card.classList.add('bg-danger')
-            //         }
-                
-            //         question_card.classList.add('show-answer')
-                    
-            //         document.querySelector('#answer').innerHTML = data.answer
-            //         $(':radio[name=_{{card.id}}]').prop('disabled', true)
-            //         document.querySelector('#submit_text').parentElement.remove()
-            //         document.querySelector('form[name="afterSubmit"]').classList.remove('d-none')
+            let auth_token= get_token()
+            axios.post(REMOTE_URL + "review", data,  {
+                headers:{
+                    "Auth-Token":auth_token,
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                if(res.data.status){
+                    this.response.isQuestionDone =true;
+                    this.response.answer = res.data.answer;
+                    this.response.isQuestionCorrect = res.data.correct;
+                    this.selected_option = null;
+                    this.final_response = res.data.response;
+                    this.previous_card = res.data.card;
+                }
+                this.submitLoader=false
+            }).catch((err)=>{
+                this.response.isQuestionDone =false;
+                this.submitLoader=false;
+                this.set_error_message(err)
+            })
+        },
+        nextQuestion(){
+            
+            if(!this.difficulty || !this.previous_card){
+                return false
+            }
 
-            //         forms.querySelector('[name="response_id"]').value = data.response_id
-            //     },
-            //     failure: function(data){
-            //         console.log("failure");
-                    
-            //         document.querySelector('#submit_text').classList.remove('d-none')
-            //         document.querySelector('.spinner-border ').classList.add('d-none')
-            //     },
-                
-            // });
+            this.submitLoader=true;
+            
+            let data = {
+                difficulty:this.difficulty,
+            }
+
+            let auth_token= get_token()
+            axios.put(REMOTE_URL + "review/" + this.previous_card.id, data,  {
+                headers:{
+                    "Auth-Token":auth_token,
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                if(res.data.status){
+                    this.current_question++;
+                }
+                this.submitLoader=false
+            }).catch((err)=>{
+                this.submitLoader=false;
+                this.set_error_message(err)
+            })
+        },
+        user_or_deck_changed(){
+            if(this.user && this.current_deck){
+                let responses = this.user.response || []
+                this.final_response = responses.find(a => a.deck_id === this.current_deck.id)
+                if(this.final_response && this.final_response.cards.length > 0){
+                    let card_index = this.current_deck.cards.findIndex(a => a.id === this.final_response.cards[this.final_response.cards.length - 1].card_id)
+                    this.current_question = card_index + 1;
+                }else{
+                    this.current_question = 0;
+                }
+            }else{
+                this.current_question = 0;
+            }
         }
     },
+    watch:{
+        card(){
+            this.time = new Date();
+            this.interval = setInterval(() => {
+                this.current_time = new Date()
+            }, 1000);
+            this.response.isQuestionDone =false;
+            this.response.answer = null;
+            this.response.isQuestionCorrect = false;
+            this.selected_option = null;
+            this.difficulty = null;
+        },
+        user(){
+            this.user_or_deck_changed()
+        },
+        current_deck(){
+            this.user_or_deck_changed()
+        },
+        current_question:{
+            handler(val){
+                if(this.current_deck){
+                    if(val >= this.current_deck.cards.length){
+                        this.isFinish = true
+                    }else{
+                        this.card = this.current_deck.cards[val]
+                    }
+                }
+            },
+            immediate:true
+        },
+        isFinish(val){
+            if(val && this.final_response){
+                this.$router.push({name:"Result", params:{response_id:this.final_response.id}})
+            }
+        }
+    },
+    created(){
+        this.set_user(true);
+        this.set_loader(true);
+        this.set_current_deck(this.$route.params.deck_id).then(()=>{
+            this.set_loader(false);
+        })
+    },
+    mounted(){
+    },
+    beforeUnmount(){
+        if(this.interval)
+            clearInterval(this.interval)
+    }
 };
 </script>
 
@@ -239,12 +328,21 @@ export default {
     perspective: 500px;
     transition: .9s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     margin: 25px auto;
+    position: relative;
 }
 .question_card h1{
     font-family: var(--font-medium);
     font-size: 1.7rem;
     transform-style: preserve-3d;
     perspective: 500px;
+    position: unset;
+}
+.timer{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1rem;
+    font-family: var(--font-medium);
 }
 #answer{
     display: block;
@@ -277,6 +375,10 @@ export default {
     position: relative;
     display: inline-block;
     vertical-align: middle;
+}
+
+.bg-success, .bg-danger{
+    color: var(--white);
 }
 .Easy::before{
     background: seagreen;

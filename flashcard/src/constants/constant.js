@@ -22,3 +22,11 @@ export function createDP(name) {
 
     return ""
 }
+
+export function get_token(){
+    let auth_token= localStorage.getItem('auth_token');
+    if (!auth_token) {
+        throw Error("Please login to continue")
+    }
+    return auth_token
+}

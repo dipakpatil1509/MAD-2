@@ -2,18 +2,15 @@
     <div id="deck">
     <div class="container deckDetails">
         <Decks />
-		<CreateDeck />
     </div>
 </div>
 </template>
 
 <script>
-import CreateDeck from '@/components/Home/CreateDeck'
 import Decks from "@/components/Home/Decks"
 export default {
     name: "Home",
     components: {
-		CreateDeck,
 		Decks
 	},
 };

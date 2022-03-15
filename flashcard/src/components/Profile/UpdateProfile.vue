@@ -249,8 +249,13 @@ export default {
         }
     },
     beforeUnmount(){
-        var modal = Modal.getInstance(document.querySelector('#updateProfile'))
-        modal.hide();
+        let elm = document.querySelector('#updateProfile')
+        if(elm){
+            let modal = Modal.getInstance()
+            if(modal){
+                modal.hide();
+            }
+        }
     }
 };
 </script>

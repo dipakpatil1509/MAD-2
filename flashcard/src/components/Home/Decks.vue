@@ -25,8 +25,7 @@
                 <input type="radio" name="sort" id="role" value="1" 
                     v-model="currentFilter" hidden />
                 <label for="role" class="shadow">
-                    <!-- <span>{{ user.role.name.lower() }}</span> -->
-                    <span>Student</span>
+                    <span>{{ role }}</span>
                 </label>
             </div>
             <div class="option">
@@ -49,7 +48,7 @@
     <div class="deckRow">
         
         <router-link v-for="(item, index) in decks" :key="index"
-            :to="{ name: 'ViewDeck', params:{deck_id:item.deck_is} }" 
+            :to="{ name: 'ViewDeck', params:{deck_id:item.id} }" 
             class="container bg-white mb-3 d-flex align-items-center deck justify-content-between">
             <div>
                 <h1>
@@ -57,7 +56,7 @@
                 </h1>
                 <p>
                     For
-                    {{ item.created_for.name ? item.created_for : 'All' }}
+                    {{ item.created_for ? item.created_for : 'All' }}
                 </p>
             </div>
             <div class="right-text">
@@ -65,32 +64,50 @@
                     {{ item.number_of_cards }}
                 </p>
                 <h6>
-                    ~By {{ item.user.name }}
+                    ~By {{ item.user.username }}
                 </h6>
-                <p class="small text-secondary ">At {{ item.created_at.strftime(" %H:%M:%S, %d/%m/%Y") }}</p>
+                <p class="small text-secondary ">At {{ new Date(item.created_at).toLocaleString('en-In') }}</p>
             </div>
         </router-link>
         <div v-if="decks.length === 0" class="deckRow text-center">
             <h1 class="fs-4">No Deck Found!</h1>
         </div>
     </div>
-       
+    <CreateDeck @get_decks="get_decks" />
 </template>
 
 <script>
+import { mapActions, mapGetters } from 'vuex';
+import CreateDeck from '@/components/Home/CreateDeck';
 export default {
     name:"HomeDecks",
     data(){
         return{
             currentFilter:0,
-            decks:[],
+        }
+    },
+    components: {
+		CreateDeck,
+	},
+    computed:{
+        ...mapGetters(["user", "decks"]),
+        role(){
+            let role = this.user.role;
+            return role && role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+        }
+    },
+    methods:{
+        ...mapActions(["set_decks", "set_loader"]),
+        get_decks(){
+            this.set_loader(true)
+            this.set_decks(this.currentFilter).then(()=>{
+                this.set_loader(false)
+            });
         }
     },
     watch:{
         currentFilter:{
-            handler(value){
-                console.log(value);
-            },
+            handler:function() {this.get_decks()},
             immediate:true,
         }
     }
@@ -98,9 +115,14 @@ export default {
 </script>
 
 <style scoped>
-
+a{
+    text-decoration: none;
+}
 .right-text{
     text-align: right;
+}
+.deckRow .container{
+    padding: 10px 20px;
 }
 .deckRow h1{
     font-size: 1.3rem;

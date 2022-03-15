@@ -6,7 +6,7 @@ from application.models.user_mode import User
 from application.models.deck import Deck, Card
 from sqlalchemy.sql import func
 from flask_restful import marshal, marshal_with, reqparse, Resource, fields
-from application.constants import user_output_fields, review_responses_fields, review_card_fields
+from application.constants import user_output_fields, user_output_with_response_fields
 from flask_security import auth_required, hash_password, verify_password
 from application.database import db
 from sqlalchemy.sql import func
@@ -28,29 +28,11 @@ class UserAPI(Resource):
     def get(self):
         args = custom_user_req.parse_args()
         isAll = args.get("isAll", False)
-        resp = marshal(current_user, user_output_fields)
+        
         if isAll:
-            all = current_user.reviewResponses.order_by(ReviewResponse.completed_at).all()
-            final = None
-            final_cards= []
-            remain = []
-
-            if all:
-                final = all[-1]
-                final_cards = final.cards.with_entities(ReviewCard.difficulty, func.count(ReviewCard.difficulty)).group_by(ReviewCard.difficulty).all()
-                final.deck = db.session.query(Deck).filter(Deck.id==final.deck_id).first()
-
-                all.reverse()
-
-                if len(all) > 1:
-                    remain = all[1:]
-                    
-                    for i,item in enumerate(remain):
-                        remain[i].deck = db.session.query(Deck).filter(Deck.id == item.deck_id).first()
-                
-                resp['final'] = marshal(final, review_responses_fields) 
-                resp['final_cards'] = marshal(final_cards, review_card_fields) 
-                resp['solved_decks']= marshal(remain, review_responses_fields) 
+            resp = marshal(current_user, user_output_with_response_fields)
+        else:
+            resp = marshal(current_user, user_output_fields)
 
         return resp, 200
 
@@ -86,10 +68,10 @@ class UserAPI(Resource):
 
             db.session.add(user)
             db.session.commit()
-            return marshal(user, user_output_fields)
+            return marshal(user, user_output_fields), 200
         except Exception as e:
             db.session.rollback()
-            return APIException(400, str(e)).error
+            return APIException(400, str(e)).error, 400
         
 
 

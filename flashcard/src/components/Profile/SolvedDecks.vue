@@ -8,25 +8,27 @@
                 <th scope="col">Tag</th>
                 <th scope="col">Score</th>
                 <th scope="col">Avg Time</th>
+                <th scope="col">Completed at</th>
             </tr>
         </thead>
         <tbody class="fs-6">
             <tr v-for="(item, index) in decks" :key="index">
                 <th scope="row">1</th>
-                <td style="text-align: left">
+                <td>
                     <router-link
                         :to="{
-                            name: 'ViewDeck',
-                            params: { deck_id: item.deck.id },
+                            name: 'Result',
+                            params: { response_id: item.id },
                         }"
                         class="fs-6 mt-0"
                     >
                         {{ item.deck.name }}
                     </router-link>
                 </td>
-                <td>{{ item.deck.created_for.name }}</td>
+                <td>{{ item.deck.created_for }}</td>
                 <td>{{ item.score }}</td>
-                <td>{{ item.avg_time }}</td>
+                <td>{{ get_time(item.avg_time) }} secs</td>
+                <td>{{ new Date(item.completed_at).toLocaleString('en-In') }}</td>
             </tr>
         </tbody>
     </table>
@@ -35,9 +37,24 @@
 <script>
 export default {
     name:"SolvedDecks",
-    props:["decks"]
+    props:["decks"],
+    methods:{
+        get_time(time){
+            if(time > 0){
+                var minutes = Math.floor(time / 60000);
+                var seconds = ((time % 60000) / 1000).toFixed(0);
+                return (minutes < 10 ? '0' : '') + minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            }
+            return "00:00"
+        }
+    }
 };
 </script>
 
 <style scoped>
+a{
+    color: #000;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
 </style>

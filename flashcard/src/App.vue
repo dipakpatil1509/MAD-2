@@ -4,7 +4,7 @@
         <div
             aria-live="polite"
             aria-atomic="true" style="z-index: 13232355"
-            class="d-flex position-relative justify-content-center align-items-center w-100"
+            class="d-flex position-fixed justify-content-center align-items-center w-100"
         >
             <div
                 class="toast position-absolute"

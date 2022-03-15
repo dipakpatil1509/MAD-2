@@ -23,6 +23,14 @@ const routes = [
 		},
 	},
 	{
+		path: '/edit_card/:card_id',
+		name: 'EditCard',
+		component: () => import('../views/AddCard.vue'),
+		meta: {
+			requiresAuth: true
+		},
+	},
+	{
 		path: '/profile',
 		name: 'Profile',
 		component: () => import('../views/Profile.vue'),
@@ -42,6 +50,14 @@ const routes = [
 		path: '/start_test/:deck_id',
 		name: 'DeckTest',
 		component: () => import('../views/DeckTest.vue'),
+		meta: {
+			requiresAuth: true
+		},
+	},
+	{
+		path: '/review/:response_id',
+		name: 'Result',
+		component: () => import('../components/Result/index.vue'),
 		meta: {
 			requiresAuth: true
 		},

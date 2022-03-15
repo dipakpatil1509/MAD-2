@@ -1,17 +1,17 @@
 <template>
     <div id="add_card">
     <div class="container add_cardDetails">
-        <h1 v-if="userDecks.length === 0" class="fs-4 text-center">
+        <h1 v-if="decks.length === 0 && !loader" class="fs-4 text-center">
             Please add a deck from 
             <router-link style="color: #0d6efd;" to="/">here</router-link> to continue
         </h1>
-        <form v-else class="needs-validation" novalidate @submit.prevent="submitForm">
+        <form v-else-if="decks.length > 0" class="needs-validation" novalidate @submit.prevent="submitForm">
             <div class="modal-body">
                 <div class="mb-3">
                     <label for="deck" class="form-label">Deck</label>
-                    <select class="form-select" id="deck" name="deck_id" aria-label="Deck" required>
-                        <option v-for="deck in userDecks" :key="deck.id"
-                            :value="deck.id" :selected="card && card.deck_id==deck.id || deck_id==deck.id">
+                    <select class="form-select" id="deck" name="deck_id" aria-label="Deck" 
+                        v-model="card.deck_id" required>
+                        <option v-for="deck in decks" :key="deck.id" :value="deck.id">
                             {{deck.name}}
                         </option>
                         
@@ -22,15 +22,15 @@
                 </div>
                 <div class="mb-3">
                     <label for="front" class="form-label">Front</label>
-                    <input type="text" class="form-control" id="front" name="front" 
-                        :v-model="card.front" placeholder="Enter front" required>
+                    <input type="text" class="form-control" id="front" autocomplete="off" name="front" 
+                        v-model="card.front" placeholder="Enter front" required>
                     <div class="invalid-feedback">
                         Please enter valid input
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="back" class="form-label">Back</label>
-                    <input type="text" class="form-control" id="back" name="back" 
+                    <input type="text" class="form-control" id="back"  autocomplete="off" name="back" 
                         v-model="card.back" placeholder="Enter Back" required>
                     <div class="invalid-feedback">
                         Please enter valid input
@@ -38,20 +38,38 @@
                 </div>
                 <div class="mb-3">
                     <label for="options" class="form-label">Options</label>
-                    <textarea class="form-control" id="options" name="options" rows="3"  
-                        required v-model="card.options">
+                    <textarea class="form-control" id="options" name="options" rows="5"  
+                        required v-model="card.options" :readonly="!card.back"
+                        :placeholder="card.back ? 'Write options with comma separated' :'Please add card answer first'">
                     </textarea>
                     <div class="helpText">
                         Separate by comma ","
+                        <br>
+                        Dont't need to write answer again
+                        <br>
+                        <span v-if="card.back">
+                            Final Options :- 
+                            {{card.back}}, {{ card.options }}
+                        </span>
                     </div>
                     <div class="invalid-feedback">
                         Please enter options
                     </div>
                 </div>
+                <div class="input-group">
+                    <label for="optionsCSV" class="form-label">Add options with CSV</label>
+                    <input type="file" class="form-control" id="optionsCSV" name="optionsCSV"
+                       :disabled="!card.back" aria-describedby="file" aria-label="Upload" accept=".csv" @input="addoptionswithcsv"
+                    />
+                </div>
             </div>
             <div class="modal-footer">
-                <a href="{{url_for('deck.view_deck', deck_id=card.deck_id) if card else url_for('profile.home') }}" class="btn btn-secondary">Close</a>
-                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a href="#!" @click.prevent="$router.go(-1)" class="btn btn-secondary">
+                    Go back
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Save changes
+                </button>
             </div>
         </form>
     </div>
@@ -59,34 +77,137 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from 'vuex';
+import axios from 'axios';
+import { REMOTE_URL } from "@/constants/constant";
+
 export default {
     name:"AddCardForm",
     data(){
         return{
-            userDecks:[{
-                id:5,
-                name:"Tree"
-            }],
-            card:{},
-            deck_id:null,
+            card:{
+                deck_id:'',
+                front:"",
+                back:"",
+                options:""
+            },
+            isUpdate:false
         }
     },
+    computed:{
+        ...mapGetters(["decks", "loader", 'current_card']),
+    },
     methods:{
+        ...mapActions([
+            "set_decks", "set_loader", "set_loader_message", 
+            "set_toast_message", "set_error_message", "set_current_card"
+        ]),
+        addoptionswithcsv(e){
+            if(e.target.files.length > 0){
+                var reader = new FileReader();
+                reader.onload = ()=>{
+                    this.card.options = reader.result;
+                };
+                reader.readAsBinaryString(e.target.files[0]);
+            }
+        },
         submitForm(e){
-            //  action="{{url_for('card.edit_card', card_id=card.id) 
-            //  if card else url_for('card.add_card') }}"
-            //   method="POST"
             let forms = e.target;
             forms.classList.add('was-validated')
             if (!forms.checkValidity()) {
                 return false;
             }
+
+            Object.keys(this.card).forEach(elem=>{
+                if(!this.card[elem]){
+                    this.set_loader_message("Please fill information for " + elem)
+                    return 
+                }
+            })
+
+            let data = {...this.card};
+            data.options += ', ' + data.back
+
+            console.log(data);
+            this.set_loader(true)
+            
+            let config = {
+                method:"POST",
+                url:REMOTE_URL + "card", 
+                data:data,
+                headers:{
+                    "Auth-Token":localStorage.getItem('auth_token'),
+                    "Content-type":"application/json"
+                }
+            }
+            if(this.isUpdate){
+                config.method = "PUT"
+                config.url += "/" + this.current_card.id
+            }
+            axios(config).then(res=>{
+                if(res.data.error_code){
+                    throw Error(res.data.error_message)
+                }
+                forms.classList.remove('was-validated')
+                if(!this.isUpdate) {
+                    Object.assign(this.$data, this.$options.data()) 
+                }else{
+                    Object.assign(this.$data, this.current_card) 
+                }
+                this.set_loader(false);
+                this.set_toast_message("Successfully added card")
+            }).catch(err=>{
+                this.set_loader(false)
+                console.log(err);
+                this.set_error_message(err)
+            })
         }
+    },
+    watch:{
+        "$route":{
+            handler(val){
+                this.card.deck_id = val.query.deck
+            },
+            immediate:true,
+            deep:true
+        }, 
+        "current_card":{
+            handler(val){
+                if(val){
+                    val.options = val.options.split(',').filter(res=> res.trim() !== val.back).join(',')
+                    this.card = {...val}
+                    this.isUpdate = true
+                }
+            },
+            immediate:true,
+        }
+    },
+    created(){
+        this.set_loader(true)
+        this.set_decks(2).then(()=>{
+            if(!this.current_card)
+                this.set_loader(false)
+        })
+        
+        this.set_loader(true)
+        this.set_current_card(this.$route.params.card_id).then(()=>{
+            this.set_loader(false)
+        })
     }
 }
 </script>
 
 <style scoped>
+textarea{
+    resize: none;
+}
+input[type="file"]{
+    display: block;
+    width: 100%;
+}
+.modal-footer{
+    justify-content: space-between;
+}
 #add_card{
     position: relative;
     height: 100%;

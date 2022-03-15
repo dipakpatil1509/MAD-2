@@ -61,56 +61,24 @@ app, api = create_app()
 
 migrate = Migrate(app, db, render_as_batch=True)
 
-# login_manager = LoginManager()
-# login_manager.login_view = 'auth.login'
-# login_manager.init_app(app)
 
-# from application.models.user_mode import User
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.query.get(int(user_id))
-
-# @app.errorhandler(APIException)
-# def handle_custom_exception(err):
-#     return jsonify(err.error), 400
-
-# @app.errorhandler(exc.SQLAlchemyError)
-# def handle_db_exceptions(error):
-#     db.session.rollback()
-
-# @app.errorhandler(TypeError)
-# def all_exception_handler(error):
-#     return dict(error_code=400, error_message=str(error))
-
-# @app.before_first_request
-# def before_req():
-#     if not session.get('user'):
-#         flash('Not so fast! Kindly login to view that page')
-#     return redirect(url_for('auth.login'))
-
-
-# from application.routes.auth import auth as auth_blueprint
-# app.register_blueprint(auth_blueprint)
-
-# from application.routes.profile import profile as profile_blueprint
-# app.register_blueprint(profile_blueprint)
-
-# from application.routes.deck import deck as deck_blueprint
-# app.register_blueprint(deck_blueprint)
-
-# from application.routes.card import card as card_blueprint
-# app.register_blueprint(card_blueprint)
-
-# from application.routes.review import review as review_blueprint
-# app.register_blueprint(review_blueprint)
-
+from application.api.home import Home
+api.add_resource(Home, '/api/decks', methods=['GET'])
 
 from application.api.profile import UserAPI
 api.add_resource(UserAPI, "/api/user")
 
 from application.api.auth import Logout
 api.add_resource(Logout, "/api/logout")
+
+from application.api.deck import DeckAPI
+api.add_resource(DeckAPI, '/api/deck', '/api/deck/<int:deck_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
+
+from application.api.card import CardAPI
+api.add_resource(CardAPI, '/api/card', '/api/card/<int:card_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
+
+from application.api.review import ReviewAPI
+api.add_resource(ReviewAPI, '/api/review', '/api/review/<int:response_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
 
 if __name__ == "__main__":
     db.create_all()
