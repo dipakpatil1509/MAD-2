@@ -26,6 +26,10 @@
                         >
                             Download Cards as Excel
                         </a>
+                        <!-- <a href="#!" @click.prevent="download_offline"
+                            class="btn ms-1 me-0 updateProfile h-50">
+                            Download Deck Offline
+                        </a> -->
                     </div>
                 </h1>
                 <div class="deckRow">
@@ -132,7 +136,7 @@
 <script>
 import axios from 'axios';
 import { mapActions, mapGetters } from 'vuex';
-import { REMOTE_URL } from "@/constants/constant";
+import { REMOTE_URL, cipher_decryption } from "@/constants/constant";
 import CreateDeck from "../Home/CreateDeck.vue";
 export default {
     components: { CreateDeck },
@@ -148,6 +152,26 @@ export default {
         ...mapActions(["set_loader", "set_current_deck", "set_error_message"]),
         download_excel() {
             // {{ url_for('card.download_excel', deck_id=deck.id) }}
+        },
+        download_offline(){
+            this.set_loader(true)
+            axios.get(REMOTE_URL + "download_deck/" + this.current_deck.id, {
+                headers:{
+                    "Auth-Token":localStorage.getItem('auth_token'),
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                if(res.data.status){
+                    console.log(res.data.deck);
+                    let deck = cipher_decryption(res.data.deck, "c8XaaKx^jafq2f9yw*CNaOAye#Y#b2eF")
+                    console.log(deck);
+                    this.set_error_message("Successfully downloaded deck")
+                }
+                this.set_loader(false)
+            }).catch(err=>{
+                this.set_error_message(err);
+                this.set_loader(false)
+            })
         },
         delete(endpoint){
             this.set_loader(true)

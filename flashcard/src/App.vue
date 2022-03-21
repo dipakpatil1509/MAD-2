@@ -1,19 +1,15 @@
 <template>
     <Navbar v-if="!hideNavFooter.includes($route.name)" />
     <main class="mainDiv">
-        <div
-            aria-live="polite"
-            aria-atomic="true" style="z-index: 13232355"
-            class="d-flex position-fixed justify-content-center align-items-center w-100"
+        <div aria-live="polite" aria-atomic="true"
+            class="toast_container"
         >
-            <div
-                class="toast position-absolute"
-                role="alert" id="toast"
-                aria-live="assertive" aria-atomic="true"
-            >
+            <div v-for="toast, index in toastMessage" :key="index" 
+                class="toast fade show"  role="alert" 
+                :id="'toast_' + index" aria-live="assertive" aria-atomic="true">
                 <div class="toast-header">
                     <strong class="me-auto">
-                        {{ toast_message }}
+                        {{ toast }}
                     </strong>
                     <button
                         type="button" class="btn-close"
@@ -35,7 +31,6 @@
 <script>
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import {Toast} from 'bootstrap';
 import { mapActions, mapGetters } from 'vuex'
 export default {
     name: "App",
@@ -46,7 +41,6 @@ export default {
     data() {
         return {
 			hideNavFooter:["Login", "Register"],
-            toast_message:""
         };
     },
 	computed:{
@@ -62,20 +56,6 @@ export default {
         ]),
 	},
 	watch:{
-		toastMessage:{
-			handler(newVal){
-				if(newVal){
-                    this.toast_message = newVal;
-					var toastLiveExample = document.getElementById('toast')
-					if(toastLiveExample){
-						var toast = new Toast(toastLiveExample)
-						toast.show()
-					}
-				}
-                this.set_toast_message(null)
-			},
-			immediate:true,
-		}
 	},
 	mounted(){
         window.onstorage =  function(e) {
@@ -136,6 +116,23 @@ body {
 }
 body::-webkit-scrollbar {
     display: none;
+}
+
+.toast_container{
+    position:fixed;
+    top: 10%;
+    left: 0;
+    width:100%;
+    z-index: 13232355;
+}
+
+.toast_container .toast{
+    display: block;
+    margin: 10px auto;
+    width:fit-content;
+    max-width: 600px;
+    height: auto;
+    word-break: break-all;
 }
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {

@@ -1,7 +1,7 @@
 import axios from "axios"
 import { createDP, get_token, REMOTE_URL } from "../../constants/constant"
 
-const set_user = async ({commit}, isAll=false)=>{
+const set_user = async ({commit, dispatch}, isAll=false)=>{
     let user = null;
     try{
         let auth_token= get_token()
@@ -18,7 +18,7 @@ const set_user = async ({commit}, isAll=false)=>{
         user = res.data;
         user.image = createDP(user.username || "F C")
     }catch (e){
-        commit('set_error_message', e)
+        dispatch('set_error_message', e)
     }
     commit('set_user', user)
 }

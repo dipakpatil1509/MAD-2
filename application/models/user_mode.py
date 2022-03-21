@@ -1,4 +1,5 @@
 from datetime import datetime
+from email.policy import default
 import enum
 
 from flask_security import RoleMixin, UserMixin
@@ -27,6 +28,7 @@ class User(Base, UserMixin):
     password = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     username = db.Column(db.String(100), nullable=True)
+    mobile_number = db.Column(db.String(16), nullable=True)
     fs_uniquifier = db.Column(db.String(255), nullable=True)
     role = db.Column(db.Enum(Role), server_default="STUDENT")
     active = db.Column(db.Boolean())
@@ -34,9 +36,17 @@ class User(Base, UserMixin):
 
     decks = db.relationship("Deck", backref="deck", lazy="dynamic")
     reviewResponses = db.relationship("ReviewResponse", backref="reviewresponse", lazy="dynamic")
+    webhooks = db.relationship("Webhooks", cascade="all,delete", backref="webhooks", lazy='dynamic')
 
     def review_response(self):
         try:
             return round(sum(review.score for review in self.reviewResponses)/self.reviewResponses.count(), 2)
         except:
             return 0.00
+
+class Webhooks(Base):
+    __tablename__ = 'webhooks'
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String, nullable=False)
+    notify = db.Column(db.Boolean, default=False)
+    user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)

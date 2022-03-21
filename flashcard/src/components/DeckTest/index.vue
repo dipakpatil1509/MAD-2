@@ -165,8 +165,11 @@ export default {
             })
         },
         nextQuestion(){
+
+            if(!this.difficulty)
+                this.difficulty = "2"
             
-            if(!this.difficulty || !this.previous_card){
+            if(!this.previous_card){
                 return false
             }
 

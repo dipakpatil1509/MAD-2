@@ -86,6 +86,7 @@ export default {
                 console.log(val);
                 if(val && val.cards.length > 0){
                     val.cards.forEach(item=>{
+                        this.diff_count = {}
                         this.get_count(item.difficulty)
                     })
                 }

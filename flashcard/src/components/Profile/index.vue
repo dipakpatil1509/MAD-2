@@ -1,19 +1,20 @@
 <template>
-    <div id="profile">
+    <div v-if="user" id="profile">
 
         <div class="container profileDetails">
             <UserDetails />
             <hr>
-            <div v-if="user.response">
+            <div v-if="user.response && user.response[0]">
                 <final-deck :final="user.response[0]" />
                 <hr>
             </div>
 
             <div v-if="user.response && user.response.length > 0">
-                <SolvedDecks :decks="user.response.slice(1)" />
+                <SolvedDecks :decks="user.response" />
             </div>
             
             <UpdateProfile />
+            <webhooks />
         </div>
     </div>
 </template>
@@ -24,8 +25,9 @@ import FinalDeck from './FinalDeck.vue'
 import SolvedDecks from './SolvedDecks.vue'
 import UpdateProfile from './UpdateProfile.vue'
 import UserDetails from './UserDetails.vue'
+import Webhooks from './Webhooks.vue'
 export default {
-    components: { SolvedDecks, FinalDeck, UserDetails, UpdateProfile },
+    components: { SolvedDecks, FinalDeck, UserDetails, UpdateProfile, Webhooks },
     name:"Profile",
     data(){
         return{

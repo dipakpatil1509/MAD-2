@@ -23,7 +23,7 @@ const set_decks = async ({commit, dispatch}, flag=0)=>{
     commit('set_decks', decks)
 }
 
-const set_current_deck = async ({commit}, deck_id)=>{
+const set_current_deck = async ({commit, dispatch}, deck_id)=>{
     let deck = null;
     if(deck !== undefined){
         try{
@@ -41,13 +41,13 @@ const set_current_deck = async ({commit}, deck_id)=>{
             deck = res.data;
             console.log(deck);
         }catch (err){
-            commit('set_error_message', err)
+            dispatch('set_error_message', err)
         }
     }
     commit('set_current_deck', deck)
 }
 
-const set_current_card = async ({commit}, card_id)=>{
+const set_current_card = async ({commit, dispatch}, card_id)=>{
     let card = null;
     if(card_id !== undefined){
         try{
@@ -65,14 +65,14 @@ const set_current_card = async ({commit}, card_id)=>{
             card = res.data;
             console.log(card);
         }catch (err){
-            commit('set_error_message', err)
+            dispatch('set_error_message', err)
         }
     }
     commit('set_current_card', card)
 }
 
 
-const set_current_response = async ({commit}, response_id)=>{
+const set_current_response = async ({commit, dispatch}, response_id)=>{
     let response = null;
     if(response_id !== undefined){
         try{
@@ -90,7 +90,7 @@ const set_current_response = async ({commit}, response_id)=>{
             response = res.data;
             console.log(response);
         }catch (err){
-            commit('set_error_message', err)
+            dispatch('set_error_message', err)
         }
     }
     commit('set_current_response', response)

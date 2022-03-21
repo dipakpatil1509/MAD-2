@@ -1,3 +1,4 @@
+import json
 from flask_login import current_user
 from flask_restful import Resource, marshal, reqparse
 from flask_security import auth_required
@@ -6,7 +7,9 @@ from application.models.deck import Deck,Card
 from application.database import db
 from application.error import APIException
 from sqlalchemy.exc import IntegrityError
-from application.constants import deck_output_fields
+from application.constants import AESCipher, deck_output_fields
+from hmac import new
+from hashlib import sha256
 
 
 deck_req = reqparse.RequestParser()
@@ -130,6 +133,29 @@ class DeckAPI(Resource):
 
         return {"status":True, "message":"Successfully Deleted"}, 200
 
+class DownloadDeckAPI(Resource):
+
+    @auth_required("token")
+    def get(self, deck_id):
+        deck = None
+        try:
+            deck_curr = db.session.query(Deck).filter(Deck.id == int(deck_id)).first()
+            if deck_curr:
+                deck_curr.user = db.session.query(User).with_entities(User.username).filter(User.id == deck_curr.created_by_id).first()
+                deck_curr.number_of_cards = deck_curr.cards.count()
+                deck=marshal(deck_curr, deck_output_fields)
+                deck = json.dumps(deck)
+                deck = AESCipher("c8XaaKx^jafq2f9yw*CNaOAye#Y#b2eF").encrypt(deck)
+                print(AESCipher("c8XaaKx^jafq2f9yw*CNaOAye#Y#b2eF").decrypt(deck))
+                return {"status":True, "deck":deck}, 200
+            else:
+                raise APIException("404", "Deck not found")
+        except APIException as e:
+            print(e)
+            return e.error, e.error["error_code"]
+        except Exception as e:
+            print(e)
+            return APIException(400, str(e)).error, 400
 
 
 

@@ -18,7 +18,14 @@
             >
                 Update Profile
             </button>
-            <button class="btn logout mx-2" href="#!" :disabled="loading" @click.prevent="logout">
+            <button
+                data-bs-toggle="modal"
+                data-bs-target="#webhooks"
+                class="btn updateProfile mx-2"
+            >
+                Webhooks
+            </button>
+            <button class="btn logout" href="#!" :disabled="loading" @click.prevent="logout">
                 <span v-if="loading" class="spinner-border spinner-border-sm" 
                 role="status" aria-hidden="true"></span>
                 <span v-else>Logout</span>
@@ -54,7 +61,7 @@ export default {
     },
     methods:{
         ...mapActions([
-            "set_toast_message"
+            "set_toast_message", "set_user"
         ]),
         logout(){
             this.loading = true;
@@ -66,6 +73,7 @@ export default {
                 console.log(res.data);
                 localStorage.removeItem('auth_token');
                 this.loading = false;
+                this.set_user()
                 this.set_toast_message("Thank you! Please come back soon!")
                 this.$router.push("/login")
             }).catch(err=>{

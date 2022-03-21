@@ -3,7 +3,18 @@ from .models.user_mode import User
 from .models.response_mode import ReviewCard, ReviewResponse
 from flask_restful import fields
 from application.database import db
+import base64
+import hashlib
+from Crypto import Random
+from Crypto.Cipher import AES
 
+
+webhooks_fields = {
+    'id': fields.Integer,
+    "url":fields.String,
+    "notify":fields.Boolean,
+    'user': fields.Integer,
+}
 
 deck_cards_fields = {
     'id': fields.Integer,
@@ -68,12 +79,41 @@ user_output_with_response_fields = {
     "email": fields.String,
     "role": fields.String(attribute=lambda obj: str(User.Role(obj.role).name)),
     "created_at":fields.DateTime,
+    "mobile_number":fields.String,
     "response":fields.List(fields.Nested(review_responses_fields), 
         attribute=lambda obj: obj.reviewResponses.order_by(ReviewResponse.completed_at.desc()).all() 
     ),
     "review_response":fields.Float(attribute=lambda obj: obj.review_response())
 }
 
+class AESCipher(object):
 
+    def __init__(self, key): 
+        self.bs = AES.block_size
+        self.key = str(key).encode("utf8")
+
+    def encrypt(self, raw):
+        raw = self._pad(raw)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw.encode("utf8"))).hex()
+
+    def decrypt(self, enc):
+        enc = bytes.fromhex(enc)
+        enc = base64.b64decode(enc)
+        iv = enc[:AES.block_size]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        print(enc[AES.block_size:])
+        return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+
+    def _pad(self, s):
+        return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
+
+    @staticmethod
+    def _unpad(s):
+        print(s)
+        print(ord(s[len(s)-1:]))
+        print(-ord(s[len(s)-1:]))
+        return s[:-ord(s[len(s)-1:])]
 #  fields.List(fields.Nested(program_student), required=True, description='List of students on program',
 #                         attribute=lambda obj: obj.get_students())

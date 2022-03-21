@@ -68,6 +68,9 @@ api.add_resource(Home, '/api/decks', methods=['GET'])
 from application.api.profile import UserAPI
 api.add_resource(UserAPI, "/api/user")
 
+from application.api.profile import WebhooksAPI
+api.add_resource(WebhooksAPI, '/api/user/webhooks', methods=['GET', 'POST'])
+
 from application.api.auth import Logout
 api.add_resource(Logout, "/api/logout")
 
@@ -79,6 +82,9 @@ api.add_resource(CardAPI, '/api/card', '/api/card/<int:card_id>', methods=['GET'
 
 from application.api.review import ReviewAPI
 api.add_resource(ReviewAPI, '/api/review', '/api/review/<int:response_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
+
+from application.api.deck import DownloadDeckAPI
+api.add_resource(DownloadDeckAPI, '/api/download_deck/<int:deck_id>', methods=['GET'])
 
 if __name__ == "__main__":
     db.create_all()

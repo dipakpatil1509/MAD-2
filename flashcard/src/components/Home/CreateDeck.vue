@@ -37,11 +37,11 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="created_for" class="form-label">Public</label>
+                                <label for="created_for" class="form-label">Do you want deck to be public?</label>
                                 <select class="form-select" id="created_for" name="public_status" 
                                 aria-label="Default select example" required v-model="currentDeck.public_status">
-                                    <option value="1" selected>True</option>
-                                    <option value="0">False</option>
+                                    <option value="1" selected>Yes</option>
+                                    <option value="0">No</option>
                                 </select>
                             </div>
                         </div>
