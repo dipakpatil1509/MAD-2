@@ -64,7 +64,7 @@
                     {{ item.number_of_cards }}
                 </p>
                 <h6>
-                    ~By {{ item.user.username }}
+                    ~By {{ item.user.username || item.user.email }}
                 </h6>
                 <p class="small text-secondary ">At {{ new Date(item.created_at).toLocaleString('en-In') }}</p>
             </div>

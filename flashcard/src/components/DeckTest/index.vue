@@ -247,7 +247,7 @@ export default {
         }
     },
     created(){
-        this.set_user(true);
+        this.set_user({isAll:true, isLogout:false});
         this.set_loader(true);
         this.set_current_deck(this.$route.params.deck_id).then(()=>{
             this.set_loader(false);

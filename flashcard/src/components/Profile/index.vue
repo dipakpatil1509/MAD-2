@@ -45,7 +45,7 @@ export default {
         ])
     },
     created(){
-        this.set_user(true)
+        this.set_user({isAll:true, isLogout:false})
     }
 }
 </script>

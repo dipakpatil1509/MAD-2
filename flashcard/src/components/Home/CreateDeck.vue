@@ -73,7 +73,7 @@ export default {
         }
     },
     methods:{
-        ...mapActions(["set_loader", "set_user", "set_toast_message", "set_error_message", "set_current_deck"]),
+        ...mapActions(["set_loader", "set_toast_message", "set_error_message", "set_current_deck"]),
         submitForm(e){
             var forms = e.target;
             forms.classList.add('was-validated')

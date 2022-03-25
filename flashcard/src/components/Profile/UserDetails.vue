@@ -73,7 +73,7 @@ export default {
                 console.log(res.data);
                 localStorage.removeItem('auth_token');
                 this.loading = false;
-                this.set_user()
+                this.set_user({isLogout:true})
                 this.set_toast_message("Thank you! Please come back soon!")
                 this.$router.push("/login")
             }).catch(err=>{

@@ -295,7 +295,7 @@ export default {
                     if (res.data.error_code) {
                         throw Error(res.data.error_message);
                     }
-                    this.set_user(true);
+                    this.set_user({isAll:true, isLogout:false});
                     forms.classList.remove("was-validated");
                     var modal = Modal.getInstance(
                         document.querySelector("#updateProfile")

@@ -11,7 +11,7 @@
                 <h3 class="fs-5">Averge time :- {{ get_time(current_response.avg_time) }} sec</h3>
             </div>
             <div class="completed_at">
-                <h3 class="fs-5">Completed At :- {{ new Date(current_response.completed_at).toLocaleString('en-In') }}</h3>
+                <h3 class="fs-5">Completed At :- {{ current_response.completed_at }}</h3>
             </div>
             <div class="question_type">
                 <table class="table table-hover">

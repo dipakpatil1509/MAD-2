@@ -60,7 +60,7 @@ export default {
 	mounted(){
         window.onstorage =  function(e) {
             if(e.key === "auth_token"){
-                this.set_user()
+                this.set_user({isAll:false, isLogout:false})
             }
         };
 	}

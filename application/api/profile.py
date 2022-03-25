@@ -1,9 +1,10 @@
 from json import dumps
 from flask_login import current_user
 from application.error import APIException
-from application.models.user_mode import  Webhooks
+from application.models.deck import Deck
+from application.models.user_mode import  User, Webhooks
 from flask_restful import marshal, reqparse, Resource
-from application.constants import user_output_fields, user_output_with_response_fields, webhooks_fields
+from application.constants import user_output_fields, user_output_with_response_fields, webhooks_fields, deck_output_fields
 from flask_security import auth_required, hash_password, verify_password
 from application.database import db
 from flask import request
@@ -35,6 +36,43 @@ Dipak Patil
 21f1004451@student.onlinedegree.iitm.ac.in
 '''.format(name=user.username if user.username else "Flashcard user")
 
+
+def new_deck_added(user, deck):
+    return '''
+*A new deck added*
+Hope you are doing well!!!
+
+Hey `{name}`, a new public deck, {deck_name}, is added by {deck_owner}. If you are a {deck_role}, it's probably for you.
+Please <http://localhost:8080/view_deck/{deck_id}|check out > as soon as possible.
+
+If you have not subscribe to this message, please contact me.
+
+Best Regards,
+Dipak Patil
+21f1004451@student.onlinedegree.iitm.ac.in
+'''.format(
+    name=user.username if user.username else user.email,
+    deck_name=deck['name'],
+    deck_owner=deck['user']['username'] if deck['user']['username'] else deck['user']['email'],
+    deck_role=deck['created_for'],
+    deck_id=deck['id']
+)
+
+def daily_remainder_msg(user):
+    return '''
+*Daily Remainder*
+Hope you are doing well!!!
+
+Hey `{name}`, you haven't solved any deck today. Is everything ok? Do let us know in case you are not fine. We care about you.
+Please <http://localhost:8080/|come back > as soon as possible.
+
+Best Regards,
+Dipak Patil
+21f1004451@student.onlinedegree.iitm.ac.in
+'''.format(
+    name=user.username if user.username else user.email,
+)
+
 def google_chat_send(url, message=None, link=None):
     url = url
 
@@ -58,7 +96,7 @@ def google_chat_send(url, message=None, link=None):
         bot_message['text'] = message
 
     message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
-    
+
     response = requests.post(url, headers=message_headers, data=dumps(bot_message) )
 
     return response
@@ -69,7 +107,6 @@ class UserAPI(Resource):
     def get(self):
         args = custom_user_req.parse_args()
         isAll = args.get("isAll", False)
-        
         if isAll:
             resp = marshal(current_user, user_output_with_response_fields)
         else:

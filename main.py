@@ -1,18 +1,17 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import os
-from flask import Flask, jsonify, redirect, session, url_for, flash
-from flask_restful import Api
+from flask import Flask, render_template
+from flask_restful import Api, marshal
 from flask_security import SQLAlchemySessionUserDatastore, Security
-from sqlalchemy import exc
 from application.database import db
-from flask_login import LoginManager
+from application import workers
 from flask_migrate import Migrate
-from application.error import APIException
 from flask_cors import CORS
-
+from jinja2 import Template
 from application.models.user_mode import Role, User
+from flask_weasyprint import render_pdf, HTML
 
-app = None
+app = celery= None
 api = None
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
@@ -32,11 +31,18 @@ class Config:
     SECURITY_SEND_REGISTER_EMAIL = False
     SECURITY_UNAUTHORIZED_VIEW = None
     WTF_CSRF_ENABLED = False
+    CELERY_ENABLE_UTC = False
+    CELERY_BROKER_URL = "redis://localhost:6379/1"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
+    REDIS_URL = "redis://localhost:6379"
 
 
 class LocalDevelopment(Config):
     DEBUG = True
     TEMPLATES_AUTO_RELOAD = True
+    CELERY_BROKER_URL = "redis://localhost:6379/1"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
+    REDIS_URL = "redis://localhost:6379"
 
 
 def create_app():
@@ -54,10 +60,21 @@ def create_app():
     security = Security(app, user_datastore)
     api = Api(app)
     CORS(app)
-    return app, api
+
+    
+    celery = workers.celery
+    
+    celery.conf.update(
+        broker_url = app.config["CELERY_BROKER_URL"],
+        result_backend = app.config["CELERY_RESULT_BACKEND"],
+    )
+
+    celery.Task = workers.ContextTask
+
+    return app, api, celery
 
 
-app, api = create_app()
+app, api, celery = create_app()
 
 migrate = Migrate(app, db, render_as_batch=True)
 
@@ -74,6 +91,9 @@ api.add_resource(WebhooksAPI, '/api/user/webhooks', methods=['GET', 'POST'])
 from application.api.auth import Logout
 api.add_resource(Logout, "/api/logout")
 
+from application.api.auth import WelcomeEmail
+api.add_resource(WelcomeEmail, "/api/welcome")
+
 from application.api.deck import DeckAPI
 api.add_resource(DeckAPI, '/api/deck', '/api/deck/<int:deck_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
 
@@ -85,6 +105,22 @@ api.add_resource(ReviewAPI, '/api/review', '/api/review/<int:response_id>', meth
 
 from application.api.deck import DownloadDeckAPI
 api.add_resource(DownloadDeckAPI, '/api/download_deck/<int:deck_id>', methods=['GET'])
+
+from application.constants import review_responses_fields
+
+def format_report(template_file, responses={}, user={}):
+    with open((template_file)) as file_:
+        template = Template(file_.read())
+        return template.render(responses=responses, user=user)
+
+@app.route("/", methods=["GET"])
+def  get_report():
+    user = User.query.filter(User.email == "dipakpatil2615@gmail.com").first()
+    reponses = marshal(user.reviewResponses.all(), review_responses_fields)
+    msg = render_template("report.html", responses=reponses, user=user)
+    file_name = user.email + "_monthly_report_" + str(datetime.now().date()) + ".pdf"
+    render_pdf(HTML(string=msg), download_filename=file_name)
+    return msg
 
 if __name__ == "__main__":
     db.create_all()

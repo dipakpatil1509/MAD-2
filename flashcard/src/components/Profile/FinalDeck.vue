@@ -33,7 +33,7 @@
                 </div>
                 <div class="completed_at">
                     <h3 class="fs-6">
-                        Completed At :- {{ new Date(final.completed_at).toLocaleString('en-In') }}
+                        Completed At :- {{ final.completed_at }}
                     </h3>
                 </div>
             </div>

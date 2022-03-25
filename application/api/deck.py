@@ -8,8 +8,7 @@ from application.database import db
 from application.error import APIException
 from sqlalchemy.exc import IntegrityError
 from application.constants import AESCipher, deck_output_fields
-from hmac import new
-from hashlib import sha256
+from application.tasks import notify_users
 
 
 deck_req = reqparse.RequestParser()
@@ -74,6 +73,9 @@ class DeckAPI(Resource):
             db.session.add(new_deck)
             db.session.commit()
 
+            if new_deck.public_status:
+                notify_users.apply_async(args=[marshal(new_deck, deck_output_fields)])
+                
             return marshal(new_deck, deck_output_fields), 200
         except APIException as e:
             return e.error, e.error["error_code"]

@@ -121,6 +121,18 @@ export default {
                     localStorage.setItem('auth_token', auth_token);
                     this.loading = false;
                     this.$router.push(this.$route.query.next || "/" )
+                    if(this.isRegister){
+                        axios.get(REMOTE_URL + "welcome",  {
+                            headers:{
+                                "Auth-Token":auth_token,
+                                "Content-type":"application/json"
+                            }
+                        }).then(()=>{
+                            console.log("Welcome");
+                        }).catch(()=>{
+                            console.log("Not Welcome");
+                        })
+                    }
                 }
                 this.loading = false;
             }).catch(err=>{

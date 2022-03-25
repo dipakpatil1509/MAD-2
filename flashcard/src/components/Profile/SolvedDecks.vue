@@ -28,7 +28,7 @@
                 <td>{{ item.deck.created_for }}</td>
                 <td>{{ item.score }}</td>
                 <td>{{ get_time(item.avg_time) }} secs</td>
-                <td>{{ new Date(item.completed_at).toLocaleString('en-In') }}</td>
+                <td>{{ item.completed_at }}</td>
             </tr>
         </tbody>
     </table>
