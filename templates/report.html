@@ -13403,128 +13403,159 @@
         }
     </style>
     <style>
-        .footer{
+        .css-table {
+            width: 100%;
+            display: table;
+        }
+
+        .css-table-header {
+            display: table-header-group;
+            font-weight: bold;
+            background-color: rgb(191, 191, 191);
+        }
+
+        .css-table-body {
+            display: table-row-group;
+        }
+
+        .css-table-row {
+            display: table-row;
+        }
+
+        .css-table-header div,
+        .css-table-row div {
+            display: table-cell;
+            padding: 0 6px;
+        }
+
+        .css-table-header div {
+            text-align: center;
+            border: 1px solid rgb(255, 255, 255);
+        }
+
+        .footer {
             width: 100%;
             background: #222;
-            position: relative;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             padding: 10px;
             text-align: center;
             color: var(--white);
             font-size: 0.95rem;
-            margin-top: 50px;
         }
 
-        .footer a{
+        .footer a {
             color: var(--white);
         }
-        @media print{
-            .response_div{
+
+        @media print {
+            .response_div {
                 page-break-before: always;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            .footer{
-                display: block;
-                position: running(footer);
-            }
         }
+
         @page :first {
             margin: 20% auto;
         }
-        @page{
+
+        @page {
             size: A4;
-            margin: 10% 5%;
-            @top-left{
-                background:#000;
-                content:counter(page);
+            margin: 10% 5% 0;
+            padding: 0 0 150px;
+
+            @top-left {
+                background: #000;
+                color: #fff;
+                content: counter(page);
                 height: 1cm;
                 text-align: center;
                 width: 1cm;
             }
-            @top-center{
+        }
+
+        @page {
+            @top-center {
                 background: var(--themeDark);
-                content:'';
+                color: #fff;
+                content: '';
                 height: 0.1cm;
                 text-align: center;
                 width: 100%;
             }
-            @top-right{
-                content:string(heading);
+        }
+
+        @page {
+            @top-right {
+                content: string(heading);
                 font-size: 1.2rem;
                 height: 1cm;
                 width: 100%;
                 vertical-align: middle;
             }
-            @bottom-right {
-                content: element(footer);
-                background-color: yellow;
-                margin-top: 20px;
-                padding-right: 34px;
-                width: 450px;
-                height: 50px;
-            }
         }
-        
+        .progress{
+            margin: 10px auto;
+        }
     </style>
 </head>
 
 <body>
-        <div class="response_div">
-            <h1 class="w-100 text-center">Welcome {{user.username}}!</h1>
-            <p class="w-100 text-center">This is your monthly report</p>
+    <div class="response_div">
+        <h1 class="w-100 text-center">Welcome {{user.username}}!</h1>
+        <p class="w-100 text-center">This is your monthly report</p>
+    </div>
+    <div class="footer">
+        <p>
+            2022 &#169;
+            <a href="mailto:21f1004451@student.onlinedegree.iitm.ac.in">21f1004451@student.onlinedegree.iitm.ac.in</a>
+        </p>
+    </div>
+    {% for response in responses %}
+    <article class="response_div">
+        <h1 class="w-100 text-center"> {{ response.deck.name }}</h1>
+        <div class="progress mt-5 w-75 mx-auto bg-danger" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width:{{response.score}}%">
+                {{response.score}}%
+            </div>
         </div>
-            <div class="footer">
-                <p>
-                    2022 &#169;
-                    <a href="mailto:21f1004451@student.onlinedegree.iitm.ac.in"
-                        >21f1004451@student.onlinedegree.iitm.ac.in</a
-                    >
-                </p>
+        <div class="mx-auto d-block w-75">
+            <div class="avg_time mt-4">
+                <h3 class="fs-5">Averge time :- {{ response.avg_time/1000 }} secs</h3>
             </div>
-        {% for response in responses %}
-        <article class="response_div">
-            <h1 class="w-100 text-center"> {{ response.deck.name }}</h1>
-            <div class="progress mt-5 w-75 mx-auto bg-danger" style="height: 25px;">
-                <div class="progress-bar bg-success" id="progressBar" role="progressbar" style="width: {{response.score}}%;">
-                    {{response.score}}%
-                </div>
+            <div class="completed_at">
+                <h3 class="fs-5">Completed At :- {{ response.completed_at }}</h3>
             </div>
-            <div class="mx-auto d-block w-75">
-                <div class="avg_time mt-4">
-                    <h3 class="fs-5">Averge time :- {{ response.avg_time/1000 }} secs</h3>
-                </div>
-                <div class="completed_at">
-                    <h3 class="fs-5">Completed At :- {{ response.completed_at }}</h3>
-                </div>
-                <div class="question_type">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr class="text-center">
-                                <th scope="col">#</th>
-                                <th scope="col">Question</th>
-                                <th scope="col">Correct Answer</th>
-                                <th scope="col">Your Answer</th>
-                                <th scope="col">Time taken</th>
-                                <th scope="col">Difficulty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in response.cards %}
-                                <tr class="Moderate text-center">
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ item.card.front }}</td>
-                                    <td>{{ item.correct_option }}</td>
-                                    <td>{{ item.selected_option }}</td>
-                                    <td>{{ item.time/1000 }} secs</td>
-                                    <td>{{ item.difficulty }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="question_type">
+                <div class="css-table">
+                    <div class="css-table-header">
+                        <div scope="col">#</div>
+                        <div scope="col">Question</div>
+                        <div scope="col">Correct Answer</div>
+                        <div scope="col">Your Answer</div>
+                        <div scope="col">Time taken</div>
+                        <div scope="col">Difficulty</div>
+                    </div>
+                    <div class="css-table-body">
+                        {% for item in response.cards %}
+                        <div class="text-center css-table-row">
+                            <div>{{ loop.index }}</div>
+                            <div>{{ item.card.front }}</div>
+                            <div>{{ item.correct_option }}</div>
+                            <div>{{ item.selected_option }}</div>
+                            <div>{{ item.time/1000 }} secs</div>
+                            <div>{{ item.difficulty }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </article>
-        {% endfor %}
+        </div>
+    </article>
+    {% endfor %}
 </body>
 
 </html>

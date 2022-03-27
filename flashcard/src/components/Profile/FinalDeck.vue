@@ -10,7 +10,7 @@
             {{ final.score }}%
         </div>
     </div>
-    <div class="mx-auto d-block w-75">
+    <div class="mx-auto d-block w-75 deck_div">
         <div class="d-flex align-items-center w-100">
             <div class="mt-4">
                 <router-link
@@ -125,5 +125,11 @@ export default {
 }
 .Hard::before{
     background: tomato;
+}
+
+@media screen and (max-width:650px){
+    .progress, .deck_div{
+        width:100% !important;
+    }
 }
 </style>

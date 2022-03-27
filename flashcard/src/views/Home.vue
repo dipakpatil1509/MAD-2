@@ -29,4 +29,11 @@ export default {
     max-width:70%;
     margin-bottom: 100px;
 }
+
+@media screen and (max-width:992px){
+    #deck .deckDetails{
+        max-width: 90%;
+        margin-bottom: 100px;
+    }
+}
 </style>

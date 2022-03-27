@@ -2,7 +2,7 @@
     <div id="loginPage" class="loginPage">
         <div class="container shadow-lg">
             <div class="row">
-                <div class="col-lg-6 col-md-12 d-flex align-items-center">
+                <div class="col-lg-6 col-md-12 login-div d-flex align-items-center">
                     <div class="loginContainer m-auto">
                         <router-link to="/" tabindex="-1">
                             <img src="@/assets/Logo.png" alt="FlashCard">
@@ -236,15 +236,18 @@ export default {
 }
 .loginContainer form{
     margin-top:15px;
+    box-sizing: border-box;
 }
 .loginContainer .contactUs{
     margin:0 auto;
     margin-top:20px;
     width:100%;
+    box-sizing: border-box;
 }
 .loginContainer .contactUs p{
     font-size: 1rem;
     font-family: Poppins Medium, sans-serif;
+    word-break: break-all;
 }
 .loginContainer .contactUs a.contact{
     font-size: 1rem;
@@ -253,6 +256,7 @@ export default {
     font-family: Poppins Medium, sans-serif;
     display: block;
     margin:5px 0 !important;
+    word-break: break-all;
 }
 
 .loginContainer .contactUs a:focus{
@@ -284,7 +288,7 @@ export default {
     .loginPage .container{
         height: 100%;
         width: 100%;
-        padding: 15px !important;
+        padding: 15px 0 !important;
         overflow-y: auto;
         overflow-x: hidden;
     }
@@ -304,7 +308,7 @@ export default {
 
 @media screen and (max-width: 568px){
     .loginPage{
-        background-image: url("/media/login_mobile.png");
+        background-image: url("../../assets/login_mobile.png");
     }
     .loginContainer .contactUs a i{
         margin-right:5px;
@@ -326,6 +330,18 @@ export default {
     }
     .input-field{
         margin:0 auto;
+    }
+}
+
+@media screen and (max-width:350px){
+    .loginContainer{
+        max-width: 90vw;
+    }
+    .login-div{
+        display: block;
+        padding: 5px !important;
+        box-sizing: border-box;
+        max-width: 100%;
     }
 }
 

@@ -70,7 +70,6 @@ export default {
 .navbar a, .navbar-toggler{
     color: var(--theme);
 }
-
 .navbar-toggler-icon{
     width: auto;
     height: auto;

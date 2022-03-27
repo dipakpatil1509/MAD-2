@@ -8,6 +8,17 @@
         >
             Create a Deck
         </button>
+
+        <button @click.prevent="download_excel"
+            class="btn translate-middle-y me-1 updateProfile h-50 float-end" 
+            :disabled="isDownloadingExcel">
+            <span v-if="isDownloadingExcel">
+                {{isDownloadingExcel}}
+            </span>
+            <span v-else>
+                Download all filtered files as Excel
+            </span>
+        </button>
     </h1>
     <div class="sort_options">
         <div class="sorts">
@@ -63,9 +74,9 @@
                 <p>
                     {{ item.number_of_cards }}
                 </p>
-                <h6>
+                <p class="by_whom">
                     ~By {{ item.user.username || item.user.email }}
-                </h6>
+                </p>
                 <p class="small text-secondary ">At {{ new Date(item.created_at).toLocaleString('en-In') }}</p>
             </div>
         </router-link>
@@ -77,13 +88,17 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { mapActions, mapGetters } from 'vuex';
+import { REMOTE_URL, fromBase64ToFile } from "@/constants/constant";
 import CreateDeck from '@/components/Home/CreateDeck';
 export default {
     name:"HomeDecks",
     data(){
         return{
             currentFilter:0,
+            isDownloadingExcel:null,
+            source:null,
         }
     },
     components: {
@@ -97,18 +112,70 @@ export default {
         }
     },
     methods:{
-        ...mapActions(["set_decks", "set_loader"]),
+        ...mapActions(["set_decks", "set_loader", "set_toast_message", "set_error_message"]),
         get_decks(){
             this.set_loader(true)
             this.set_decks(this.currentFilter).then(()=>{
                 this.set_loader(false)
             });
-        }
+        },
+        download_excel(){
+            this.set_loader(true)
+            let data = {
+                decks:this.decks && this.decks.map(item=>item.id)
+            }
+            axios.post(REMOTE_URL + "download_deck", data, {
+                headers:{
+                    "Auth-Token":localStorage.getItem('auth_token'),
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                this.set_loader(false);
+                if(res.data.success){
+                    this.set_toast_message(res.data.message)
+                }
+            }).catch(err=>{
+                this.set_error_message(err);
+                this.set_loader(false)
+            })
+        },
     },
     watch:{
         currentFilter:{
             handler:function() {this.get_decks()},
             immediate:true,
+        }
+    },
+    
+    mounted(){
+        var vm = this;
+        this.source = new EventSource(REMOTE_URL.replace('api/', '') + "stream?channel=" + this.user.email + "_" + this.user.id);
+        this.source.addEventListener('excel', function(event) {
+            var data = JSON.parse(event.data);
+            vm.isDownloadingExcel = data.message;
+            if(data.file){
+                const downloadLink = document.createElement("a");
+                let fileName = data.filename;
+                let file = fromBase64ToFile(data.file)
+                downloadLink.href = file;
+                downloadLink.download = fileName;
+                downloadLink.click();
+            }
+            if(data.isDone){
+                vm.isDownloadingExcel = null;
+                vm.set_toast_message("Your files are downloaded")
+            }
+        }, false);
+        this.source.addEventListener('error', (event)=>{
+            console.log(event);
+            this.set_toast_message("Failed to connect to the server");
+        }, false);
+
+    },
+
+    unmounted(){
+        if(this.source){
+            this.source.close()
         }
     }
 };
@@ -129,7 +196,7 @@ a{
     font-family: var(--font-medium);
     margin-bottom: 5px;
 }
-h6{
+h6, .by_whom{
     font-size: 0.95rem;
     font-family: var(--font-medium);
     margin-bottom: 0;
@@ -198,5 +265,30 @@ h6{
 .sort_options input[type="radio"]:checked + label{
     background: var(--buttonColor);
     color: var(--white);
+}
+
+@media screen and (max-width:800px){
+    .headline .btn{
+        display: block;
+        position: relative;
+        float:none !important;
+        margin: 15px 0;
+        transform: translateY(0) !important;
+    }
+    .sorts{
+        justify-content: space-around;
+    }
+}
+@media screen and (max-width:450px){
+    .sorts{
+        justify-content: flex-start;
+    }
+    
+    .option label,
+    .sort_title{
+        padding: 5px 15px;
+        min-width: max-content;
+    }
+
 }
 </style>

@@ -1,20 +1,16 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from json import dumps
 import smtplib
-from time import time
 from flask import render_template
 from application.models.deck import Card, Deck
 from .models.user_mode import User
 from .models.response_mode import ReviewCard, ReviewResponse
-from flask_restful import fields
+from flask_restful import fields, marshal
 from application.database import db
-import base64
-from Crypto import Random
-from Crypto.Cipher import AES
 import requests
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from weasyprint import HTML
 
 SMS_API_KEY="HXIN1728258019IN"
 SMS_API_SECRET="Afb79b5e96ed71649fe6dfa162cf04425"
@@ -48,7 +44,7 @@ deck_output_fields = {
     "public_status": fields.Boolean,
     "created_at":fields.DateTime,
     "created_by_id": fields.Integer,
-    "cards":fields.List(fields.Nested(deck_cards_fields), attribute=lambda obj: obj.cards.all() ),
+    "cards":fields.List(fields.Nested(deck_cards_fields), attribute=lambda obj: obj.cards ),
     "number_of_cards": fields.Integer,
     "user":fields.Nested({
         "username":fields.String, 
@@ -109,36 +105,6 @@ user_output_with_response_fields = {
     "review_response":fields.Float(attribute=lambda obj: obj.review_response())
 }
 
-class AESCipher(object):
-
-    def __init__(self, key): 
-        self.bs = AES.block_size
-        self.key = str(key).encode("utf8")
-
-    def encrypt(self, raw):
-        raw = self._pad(raw)
-        iv = Random.new().read(AES.block_size)
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return base64.b64encode(iv + cipher.encrypt(raw.encode("utf8"))).hex()
-
-    def decrypt(self, enc):
-        enc = bytes.fromhex(enc)
-        enc = base64.b64decode(enc)
-        iv = enc[:AES.block_size]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        print(enc[AES.block_size:])
-        return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
-
-    def _pad(self, s):
-        return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
-
-    @staticmethod
-    def _unpad(s):
-        print(s)
-        print(ord(s[len(s)-1:]))
-        print(-ord(s[len(s)-1:]))
-        return s[:-ord(s[len(s)-1:])]
-    
 # class ReportGenerate:
 def format_message(template_file, data={}):
     return render_template(template_file, data=data)
@@ -159,13 +125,23 @@ def email_send(to_address, subject, message, attachment=None):
 
     return True
 
-def email_sendgrid_send(to_address, subject, message, attachment=None):
+def email_sendgrid_send(to_address, subject, message, attachment=None, filename=None):
     message = Mail(
         from_email='dipakpatil2415@gmail.com',
         to_emails=to_address,
         subject=subject,
         html_content=message,
     )
+    print("message created")
+    if attachment:
+        from sendgrid.helpers.mail import Attachment, FileContent, FileName, FileType, Disposition
+        attachedFile = Attachment(
+            FileContent(attachment),
+            FileName(filename),
+            FileType('application/pdf'),
+            Disposition('attachment')
+        )
+        message.attachment = attachedFile
     try:
         sg = SendGridAPIClient(SENDGRID_API)
         response = sg.send(message)
@@ -194,3 +170,15 @@ def sms_send(number, message):
         print(response.json())
     except Exception as ex:
         print('Error creating batch: %s' % str(ex))
+
+def get_report_html(user, reviewResp):
+    reponses = marshal(reviewResp, review_responses_fields)
+    user = marshal(user, user_output_fields)
+    msg = render_template("report.html", responses=reponses, user=user)
+    return msg
+
+def get_report(user, reviewResp):
+    msg = get_report_html(user,reviewResp)
+    html = HTML(string=msg)
+    return html.write_pdf()
+

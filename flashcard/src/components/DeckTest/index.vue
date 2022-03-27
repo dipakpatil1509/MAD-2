@@ -98,6 +98,7 @@ export default {
             interval:null,
             final_response:null,
             previous_card:null,
+            cards:null,
         };
     },
     computed: {
@@ -197,16 +198,24 @@ export default {
         },
         user_or_deck_changed(){
             if(this.user && this.current_deck){
+                this.cards = this.current_deck.cards;
                 let responses = this.user.response || []
                 this.final_response = responses.find(a => a.deck_id === this.current_deck.id)
                 if(this.final_response && this.final_response.cards.length > 0){
-                    let card_index = this.current_deck.cards.findIndex(a => a.id === this.final_response.cards[this.final_response.cards.length - 1].card_id)
-                    this.current_question = card_index + 1;
-                }else{
-                    this.current_question = 0;
+                    this.cards = this.current_deck.cards.filter(a => !this.final_response.cards.some(b => b.card_id === a.id ))
                 }
-            }else{
-                this.current_question = 0;
+            }
+            this.current_question = 0;
+            
+        },
+        cards_or_question_changed(){
+            if(this.current_deck && this.cards){
+                console.log(this.cards);
+                if(this.current_question >= this.cards.length){
+                    this.isFinish = true
+                }else{
+                    this.card = this.cards[this.current_question]
+                }
             }
         }
     },
@@ -223,22 +232,20 @@ export default {
             this.difficulty = null;
         },
         user(){
+            console.log(this.user);
             this.user_or_deck_changed()
         },
         current_deck(){
             this.user_or_deck_changed()
         },
         current_question:{
-            handler(val){
-                if(this.current_deck){
-                    if(val >= this.current_deck.cards.length){
-                        this.isFinish = true
-                    }else{
-                        this.card = this.current_deck.cards[val]
-                    }
-                }
+            handler(){
+                this.cards_or_question_changed()
             },
             immediate:true
+        },
+        cards(){
+            this.cards_or_question_changed()
         },
         isFinish(val){
             if(val && this.final_response){
@@ -391,5 +398,14 @@ export default {
 }
 .Hard::before{
     background: tomato;
+}
+
+@media screen and (max-width:600px) {
+    .container-sm {
+        width: 95% !important;
+    }
+    #review .btn.w-25{
+        width: 100% !important;
+    }
 }
 </style>

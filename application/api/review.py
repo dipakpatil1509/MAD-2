@@ -1,4 +1,5 @@
 from datetime import datetime
+from application.cache import cache
 from flask_login import current_user
 from flask_restful import Resource, marshal, reqparse
 from flask_security import auth_required
@@ -17,20 +18,24 @@ card_req.add_argument("answer")
 card_req.add_argument("time")
 card_req.add_argument("difficulty")
 
+@cache.memoize(timeout=60*60)
+def get_review(response_id):
+    try:
+        response_curr = db.session.query(ReviewResponse).filter(ReviewResponse.id == response_id).first()
+        if response_curr:
+            return marshal(response_curr, review_responses_fields)
+        else:
+            raise APIException("404", "Response not found")
+    except APIException as e:
+        return e.error, e.error["error_code"]
+    except Exception as e:
+        return APIException(400, str(e)).error, 400
+
 class ReviewAPI(Resource):
     
     @auth_required("token")
     def get(self, response_id):
-        try:
-            response_curr = db.session.query(ReviewResponse).filter(ReviewResponse.id == response_id).first()
-            if response_curr:
-                return marshal(response_curr, review_responses_fields)
-            else:
-                raise APIException("404", "Response not found")
-        except APIException as e:
-            return e.error, e.error["error_code"]
-        except Exception as e:
-            return APIException(400, str(e)).error, 400
+        return get_review(response_id)
 
     @auth_required("token")
     def post(self):

@@ -60,4 +60,10 @@ export default {
     padding:10px 15px;
     min-width:85%;
 }
+
+@media screen and (max-width:992px) {
+    #profile .container{
+        min-width:95%;
+    }
+}
 </style>

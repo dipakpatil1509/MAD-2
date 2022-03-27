@@ -1,15 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
-from flask import Flask, render_template
-from flask_restful import Api, marshal
-from flask_security import SQLAlchemySessionUserDatastore, Security
+from flask import Flask
+from flask_restful import Api
+from flask_security import SQLAlchemySessionUserDatastore, Security, auth_required
 from application.database import db
 from application import workers
 from flask_migrate import Migrate
 from flask_cors import CORS
-from jinja2 import Template
 from application.models.user_mode import Role, User
-from flask_weasyprint import render_pdf, HTML
+from flask_sse import sse
 
 app = celery= None
 api = None
@@ -35,6 +34,9 @@ class Config:
     CELERY_BROKER_URL = "redis://localhost:6379/1"
     CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
     REDIS_URL = "redis://localhost:6379"
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_HOST = "localhost"
+    CACHE_REDIS_PORT = 6379
 
 
 class LocalDevelopment(Config):
@@ -70,6 +72,7 @@ def create_app():
     )
 
     celery.Task = workers.ContextTask
+    app.app_context().push()
 
     return app, api, celery
 
@@ -77,7 +80,6 @@ def create_app():
 app, api, celery = create_app()
 
 migrate = Migrate(app, db, render_as_batch=True)
-
 
 from application.api.home import Home
 api.add_resource(Home, '/api/decks', methods=['GET'])
@@ -104,23 +106,15 @@ from application.api.review import ReviewAPI
 api.add_resource(ReviewAPI, '/api/review', '/api/review/<int:response_id>', methods=['GET', 'POST', 'PUT', "DELETE"])
 
 from application.api.deck import DownloadDeckAPI
-api.add_resource(DownloadDeckAPI, '/api/download_deck/<int:deck_id>', methods=['GET'])
+api.add_resource(DownloadDeckAPI, '/api/download_deck', '/api/download_deck/<int:deck_id>', methods=['GET', 'POST'])
 
-from application.constants import review_responses_fields
+from application.api.card import UploadAPI
+api.add_resource(UploadAPI, '/api/upload', methods=['POST'])
 
-def format_report(template_file, responses={}, user={}):
-    with open((template_file)) as file_:
-        template = Template(file_.read())
-        return template.render(responses=responses, user=user)
+from application.api.report import ReportAPI
+api.add_resource(ReportAPI, '/api/report/<int:response_id>', methods=['GET'])
 
-@app.route("/", methods=["GET"])
-def  get_report():
-    user = User.query.filter(User.email == "dipakpatil2615@gmail.com").first()
-    reponses = marshal(user.reviewResponses.all(), review_responses_fields)
-    msg = render_template("report.html", responses=reponses, user=user)
-    file_name = user.email + "_monthly_report_" + str(datetime.now().date()) + ".pdf"
-    render_pdf(HTML(string=msg), download_filename=file_name)
-    return msg
+app.register_blueprint(sse, url_prefix='/stream')
 
 if __name__ == "__main__":
     db.create_all()

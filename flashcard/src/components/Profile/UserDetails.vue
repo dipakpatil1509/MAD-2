@@ -111,7 +111,8 @@ export default {
     flex-basis:22%;
     height: auto;
     min-height: 220px;
-}img{
+}
+img{
     max-width: 100%;
     max-height: 100%;
     height: auto;
@@ -186,4 +187,45 @@ a:not(.btn){
     min-width: 150px;
 }
 
+@media screen and (max-width:992px) {
+    .btn.updateProfile, .btn.logout{
+        margin-top: 10px;
+    }
+}
+
+@media screen and (max-width:800px) {
+    .image{
+        flex-basis:100%;
+        background: transparent;
+    }
+    .image img{
+        border-radius: 50%;
+    }
+    div.details{
+        flex-basis:70%;
+    }
+    div.badge{
+        flex-basis: 30%;
+    }
+    div.badge h1{
+        font-size: 3.5rem;
+    }
+}
+
+@media screen and (max-width:600px) {
+    .btn.updateProfile, .btn.logout{
+        margin-left: 0 !important;
+    }
+}
+
+@media screen and (max-width:500px) {
+    
+    div.details, div.badge{
+        flex-basis:100%;
+        text-align: center;
+    }
+    .btn.updateProfile, .btn.logout{
+        width: 100%;
+    }
+}
 </style>

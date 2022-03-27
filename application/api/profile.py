@@ -1,4 +1,5 @@
 from json import dumps
+from application.cache import cache
 from flask_login import current_user
 from application.error import APIException
 from application.models.deck import Deck
@@ -82,7 +83,7 @@ def google_chat_send(url, message=None, link=None):
         bot_message["buttons"]= [
             {
                 "textButton": {
-                    "text": "OPEN IN GOOGLE MAPS",
+                    "text": "Solve now",
                     "onClick": {
                         "openLink": {
                         "url": link
@@ -111,7 +112,6 @@ class UserAPI(Resource):
             resp = marshal(current_user, user_output_with_response_fields)
         else:
             resp = marshal(current_user, user_output_fields)
-
         return resp, 200
 
 
@@ -157,7 +157,6 @@ class UserAPI(Resource):
 class WebhooksAPI(Resource):
     @auth_required("token")
     def get(self):
-        print(current_user.webhooks.all())
         return marshal(current_user.webhooks.all(), webhooks_fields), 200
 
     @auth_required("token")

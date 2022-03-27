@@ -21,7 +21,7 @@ class Deck(Base):
     created_for = db.Column(db.Enum(Type))
     public_status = db.Column(db.Boolean, default=True)
     
-    cards = db.relationship("Card", cascade="all,delete", backref="deck", lazy='dynamic')
+    cards = db.relationship("Card", cascade="all,delete", backref="deck", lazy='subquery')
 
 class Card(Base):
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)

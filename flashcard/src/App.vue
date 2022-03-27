@@ -90,8 +90,8 @@ export default {
     --white: #ffffff;
     --theme: #6642e4;
     --themeDark: #7b13fa;
-    --buttonColor: #dc3c4d;
-    --buttonColorRGB: rgb(220, 60, 77);
+    --buttonColor: #6e2229;
+    --buttonColorRGB: 110, 34, 41;
     --backgroundColor: #f5f5ef;
     --font-regular: Poppins Regular, sans-serif;
     --font-medium: Poppins Medium, sans-serif;

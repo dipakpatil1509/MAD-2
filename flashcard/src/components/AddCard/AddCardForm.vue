@@ -265,4 +265,10 @@ input[type="file"]{
 }
 
 
+@media screen and (max-width:992px){
+    #add_card .add_cardDetails{
+        max-width: 90%;
+        margin-bottom: 100px;
+    }
+}
 </style>

@@ -7,29 +7,28 @@
                     <div class="float-end">
                         <div v-if="current_deck.created_by_id == user.id">
                             <a href="#!" @click.prevent="deleteDeck"
-                                class="btn updateProfile btn-secondary d-inline-block float-end">
+                                class="btn me-3 updateProfile btn-secondary d-inline-block">
                                 Delete Deck
                             </a>
                             <router-link :to="{name:'AddCard', query:{deck:current_deck.id} }"
-                                class="btn me-3 mb-3 updateProfile d-inline-block float-end">
+                                class="btn me-3 updateProfile d-inline-block">
                                 Add Card
                             </router-link>
                             <button data-bs-toggle="modal" data-bs-target="#create_a_deck"
-                                class="btn updateProfile mb-3 me-3 d-inline-block">
+                                class="btn updateProfile me-3 d-inline-block">
                                 Update Deck
                             </button>
                         </div>
-                        <a
-                            v-if="current_deck.created_by_id != user.id && current_deck.cards && current_deck.cards.length > 0"
-                            href="#!" @click.prevent="download_excel"
-                            class="btn ms-auto me-0 updateProfile h-50"
-                        >
-                            Download Cards as Excel
-                        </a>
-                        <!-- <a href="#!" @click.prevent="download_offline"
-                            class="btn ms-1 me-0 updateProfile h-50">
-                            Download Deck Offline
-                        </a> -->
+                        <button @click.prevent="download_excel"  v-if="current_deck.created_by_id != user.id"
+                            class="btn ms-auto me-0 updateProfile h-50" 
+                            :disabled="isDownloadingExcel">
+                            <span v-if="isDownloadingExcel">
+                                {{isDownloadingExcel}}
+                            </span>
+                            <span v-else>
+                                Download Excel
+                            </span>
+                        </button>
                     </div>
                 </h1>
                 <div class="deckRow">
@@ -66,12 +65,10 @@
                 </router-link>
                 <h6 v-else>No Questions Added</h6>
                 <div v-if="current_deck.created_by_id == user.id" class="container">
-                    <div class="mb-5 d-flex align-items-end">
+                    <div class="mb-5 d-flex align-items-end form_div">
                         <form
                             class="w-50 ms-0"
-                            action="{{ url_for('card.import_card', deck_id=current_deck.id) }}"
-                            enctype="multipart/form-data"
-                            method="POST"
+                            @submit.prevent="uploadExcel($event)"
                         >
                             <h6>Upload Excel</h6>
                             <div class="input-group">
@@ -94,14 +91,16 @@
                                 </button>
                             </div>
                         </form>
-
-                        <a
-                            v-if="current_deck.cards && current_deck.cards.length > 0"
-                            href="{{ url_for('card.download_excel', deck_id=current_deck.id) }}"
-                            class="btn ms-auto me-0 updateProfile h-50"
-                        >
-                            Download Cards as Excel
-                        </a>
+                        <button @click.prevent="download_excel"
+                            class="btn ms-auto me-0 updateProfile h-50" 
+                            :disabled="isDownloadingExcel">
+                            <span v-if="isDownloadingExcel">
+                                {{isDownloadingExcel}}
+                            </span>
+                            <span v-else>
+                                Download Excel
+                            </span>
+                        </button>
                     </div>
                     <create-deck :isUpdate="true" :deck="current_deck" />
                     <div class="row">
@@ -136,24 +135,23 @@
 <script>
 import axios from 'axios';
 import { mapActions, mapGetters } from 'vuex';
-import { REMOTE_URL, cipher_decryption } from "@/constants/constant";
+import { REMOTE_URL, fromBase64ToFile } from "@/constants/constant";
 import CreateDeck from "../Home/CreateDeck.vue";
 export default {
     components: { CreateDeck },
     name: "ViewDeck",
     data() {
         return {
+            source:null,
+            isDownloadingExcel:null,
         };
     },
     computed: {
         ...mapGetters(["current_deck", "user", "loader"])
     },
     methods: {
-        ...mapActions(["set_loader", "set_current_deck", "set_error_message"]),
-        download_excel() {
-            // {{ url_for('card.download_excel', deck_id=deck.id) }}
-        },
-        download_offline(){
+        ...mapActions(["set_loader", "set_current_deck", "set_error_message", "set_toast_message"]),
+        download_excel(){
             this.set_loader(true)
             axios.get(REMOTE_URL + "download_deck/" + this.current_deck.id, {
                 headers:{
@@ -161,13 +159,33 @@ export default {
                     "Content-type":"application/json"
                 }
             }).then(res=>{
-                if(res.data.status){
-                    console.log(res.data.deck);
-                    let deck = cipher_decryption(res.data.deck, "c8XaaKx^jafq2f9yw*CNaOAye#Y#b2eF")
-                    console.log(deck);
-                    this.set_error_message("Successfully downloaded deck")
+                this.set_loader(false);
+                if(res.data.success){
+                    this.set_toast_message(res.data.message)
                 }
+            }).catch(err=>{
+                this.set_error_message(err);
                 this.set_loader(false)
+            })
+        },
+        uploadExcel(e){
+            this.set_loader(true)
+            let formData = new FormData(e.target);
+            formData.append("deck_id", this.current_deck.id)
+            axios.post(REMOTE_URL + "upload", formData, {
+                headers:{
+                    "Auth-Token":localStorage.getItem('auth_token'),
+                    "Content-type":"application/json"
+                }
+            }).then(res=>{
+                if(res.data.success){
+                    this.set_current_deck(this.$route.params.deck_id).then(()=>{
+                        this.set_loader(false);
+                    })
+                }else{
+                    this.set_loader(false);
+                }
+                this.set_toast_message(res.data.message)
             }).catch(err=>{
                 this.set_error_message(err);
                 this.set_loader(false)
@@ -214,6 +232,38 @@ export default {
             this.set_loader(false);
         })
     },
+    
+    mounted(){
+        var vm = this;
+        this.source = new EventSource(REMOTE_URL.replace('api/', '') + "stream?channel=" + this.user.email + "_" + this.user.id);
+        this.source.addEventListener('excel', function(event) {
+            var data = JSON.parse(event.data);
+            vm.isDownloadingExcel = data.message;
+            if(data.file){
+                const downloadLink = document.createElement("a");
+                let fileName = data.filename;
+                let file = fromBase64ToFile(data.file)
+                downloadLink.href = file;
+                downloadLink.download = fileName;
+                downloadLink.click();
+                vm.set_toast_message("Your file is downloaded")
+            }
+            if(data.isDone){
+                vm.isDownloadingExcel = null;
+            }
+        }, false);
+        this.source.addEventListener('error', (event)=>{
+            console.log(event);
+            this.set_toast_message("Failed to connect to the server");
+        }, false);
+
+    },
+
+    unmounted(){
+        if(this.source){
+            this.source.close()
+        }
+    }
 };
 </script>
 
@@ -259,5 +309,38 @@ export default {
     color: #fff;
     background-color: #6c757d;
     border-color: #6c757d;
+}
+@media screen and (max-width:992px){
+    #deck .deckDetails{
+        max-width: 90%;
+        margin-bottom: 100px;
+    }
+}
+
+@media screen and (max-width:600px){
+    .headline .float-end{
+        float:none !important;
+    }
+    .btn.updateProfile {
+        width: 100% !important;
+    }
+}
+
+@media screen and (max-width:500px){
+    .deckRow .deck{
+        flex-wrap: wrap;
+    }
+    .deckRow .deck div{
+        width:100%;
+        text-align:center !important;
+    }
+    
+    .container .form_div{
+        flex-wrap: wrap;
+        row-gap: 15px;
+    }
+    .container form{
+        width: 100% !important;
+    }
 }
 </style>
