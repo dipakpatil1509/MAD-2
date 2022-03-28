@@ -26,21 +26,25 @@
 			<span class="visually-hidden">Loading...</span>
 		</div>
 	</div>
+    <Network_error v-if="!onLine" />
 </template>
 
 <script>
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Network_error from "@/components/NetworkError/NetworkError";
 import { mapActions, mapGetters } from 'vuex'
 export default {
     name: "App",
     components: {
         Navbar,
         Footer,
+        Network_error
     },
     data() {
         return {
 			hideNavFooter:["Login", "Register"],
+            onLine: navigator.onLine,
         };
     },
 	computed:{
@@ -54,8 +58,11 @@ export default {
             "set_toast_message",
             "set_user"
         ]),
-	},
-	watch:{
+        updateOnlineStatus(e) {
+            console.log(e);
+            const {type} = e;
+            this.onLine = type === 'online';
+        },
 	},
 	mounted(){
         window.onstorage =  function(e) {
@@ -63,7 +70,13 @@ export default {
                 this.set_user({isAll:false, isLogout:false})
             }
         };
-	}
+        window.addEventListener('online', this.updateOnlineStatus);
+        window.addEventListener('offline', this.updateOnlineStatus);
+	},
+    beforeUnmount() {
+        window.removeEventListener('online', this.updateOnlineStatus);
+        window.removeEventListener('offline', this.updateOnlineStatus);
+    }
 };
 </script>
 
@@ -71,14 +84,17 @@ export default {
 @font-face {
     font-family: Poppins Bold;
     src: url("./assets/Poppins/Poppins-Bold.ttf");
+    font-display: swap;
 }
 @font-face {
     font-family: Poppins Regular;
     src: url("./assets/Poppins/Poppins-Regular.ttf");
+    font-display: swap;
 }
 @font-face {
     font-family: Poppins Medium;
     src: url("./assets/Poppins/Poppins-Medium.ttf");
+    font-display: swap;
 }
 
 * {

@@ -19,7 +19,8 @@
                                 Update Deck
                             </button>
                         </div>
-                        <button @click.prevent="download_excel"  v-if="current_deck.created_by_id != user.id"
+                        <button @click.prevent="download_excel"  
+                            v-if="current_deck.created_by_id != user.id && current_deck.cards && current_deck.cards.length > 0"
                             class="btn ms-auto me-0 updateProfile h-50" 
                             :disabled="isDownloadingExcel">
                             <span v-if="isDownloadingExcel">
@@ -92,7 +93,8 @@
                             </div>
                         </form>
                         <button @click.prevent="download_excel"
-                            class="btn ms-auto me-0 updateProfile h-50" 
+                            class="btn ms-auto me-0 updateProfile h-50"
+                            v-if="current_deck.cards && current_deck.cards.length > 0"
                             :disabled="isDownloadingExcel">
                             <span v-if="isDownloadingExcel">
                                 {{isDownloadingExcel}}

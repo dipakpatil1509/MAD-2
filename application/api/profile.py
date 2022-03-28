@@ -86,7 +86,7 @@ def google_chat_send(url, message=None, link=None):
                     "text": "Solve now",
                     "onClick": {
                         "openLink": {
-                        "url": link
+                            "url": link
                         }
                     }
                 }
@@ -95,11 +95,11 @@ def google_chat_send(url, message=None, link=None):
     
     if message:
         bot_message['text'] = message
-
     message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
 
     response = requests.post(url, headers=message_headers, data=dumps(bot_message) )
 
+    print(response)
     return response
 
 class UserAPI(Resource):

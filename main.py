@@ -1,6 +1,6 @@
 from datetime import timedelta
 import os
-from flask import Flask
+from flask import Flask, redirect
 from flask_restful import Api
 from flask_security import SQLAlchemySessionUserDatastore, Security, auth_required
 from application.database import db
@@ -48,7 +48,7 @@ class LocalDevelopment(Config):
 
 
 def create_app():
-    app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="")
+    app = Flask(__name__, template_folder="templates", static_folder="", static_url_path="")
     app.logger.debug("Starting Server")
     app.config.from_object(LocalDevelopment)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'

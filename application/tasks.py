@@ -31,7 +31,7 @@ def periodic_tasks(sender, **kwargs):
 
 @celery.task()
 def send_google_chat(url, msg, link=None):
-    google_chat_send(url, msg, link)
+    google_chat_send(url, msg)
 
 @celery.task()
 def send_email(address, subject, file, data, attachment=None, filename=None):
