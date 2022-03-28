@@ -223,9 +223,13 @@ a:not(.btn){
     div.details, div.badge{
         flex-basis:100%;
         text-align: center;
+        width: 100%;
+        word-break: break-all;
+        padding: 10px;
     }
     .btn.updateProfile, .btn.logout{
         width: 100%;
+        box-sizing: border-box;
     }
 }
 </style>
