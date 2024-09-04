@@ -12,13 +12,13 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from weasyprint import HTML
 
-SMS_API_KEY="HXIN1728258019IN"
-SMS_API_SECRET="Afb79b5e96ed71649fe6dfa162cf04425"
+SMS_API_KEY=""
+SMS_API_SECRET=""
 SENDER_ADDRESS="noreply@flashcard.com"
 SMTP_SERVER_HOST="localhost"
 SMTP_SERVER_PORT = 1025
 SENDER_PASSWORD = ""
-SENDGRID_API = "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"
+SENDGRID_API = ""
 
 
 webhooks_fields = {
